@@ -1,4 +1,3 @@
-using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,6 +12,7 @@ namespace NodeGraph.Editor
         private const int NodePadding = 25;
         private const int NodeBorder = 12;
         
+        //Define where the editor window will be created in the Unity menu
         [MenuItem("Room Node Graph Editor", menuItem = "Window/Dungeon Editor/Room Node Graph Editor")]
         
         public static void ShowWindow()
