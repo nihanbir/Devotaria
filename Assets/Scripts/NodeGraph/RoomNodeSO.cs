@@ -19,6 +19,8 @@ namespace NodeGraph
 #if UNITY_EDITOR
 
         [HideInInspector] public Rect rect;
+        [HideInInspector] public bool isLeftClickDragging;
+        [HideInInspector] public bool isSelected;
         
         public void Initialize(Rect rect, RoomNodeGraphSO nodeGraph, RoomNodeTypeSO roomNodeType)
         {
@@ -73,7 +75,88 @@ namespace NodeGraph
             }
             return roomArray;
         }
+
+        public void ProcessEvents(Event currentEvent)
+        {
+            switch (currentEvent.type)
+            {
+                case EventType.MouseDown:
+                    ProcessMouseDownEvent(currentEvent);
+                    break;
+                
+                case EventType.MouseUp:
+                    ProcessMouseUpEvent(currentEvent);
+                    break;
+                
+                case EventType.MouseDrag:
+                    ProcessMouseDragEvent(currentEvent);
+                    break;
+            }
+        }
+
+        private void ProcessMouseDragEvent(Event currentEvent)
+        {
+            if (currentEvent.button == 0)
+            {
+                ProcessLeftMouseDragEvent(currentEvent);
+            }
+        }
         
+        /// <summary>
+        /// Expand this function for left mouse drag events
+        /// </summary>
+        private void ProcessLeftMouseDragEvent(Event currentEvent)
+        {
+            isLeftClickDragging = true;
+            
+            //.delta captures the mouse movement since the last frame
+            DragMode(currentEvent.delta);
+            GUI.changed = true;
+        }
+
+        private void DragMode(Vector2 currentEventDelta)
+        {
+            rect.position += currentEventDelta;
+            EditorUtility.SetDirty(this);
+        }
+
+        private void ProcessMouseUpEvent(Event currentEvent)
+        {
+            if (currentEvent.button == 0)
+            {
+                ProcessLeftClickUpEvent();
+            }
+        }
+
+        /// <summary>
+        /// Expand this function for left click up events
+        /// </summary>
+        private void ProcessLeftClickUpEvent()
+        {
+            if (isLeftClickDragging)
+            {
+                isLeftClickDragging = false;
+            }
+        }
+
+        private void ProcessMouseDownEvent(Event currentEvent)
+        {
+            if (currentEvent.button == 0)
+            {
+                ProcessLeftClickDownEvent();
+            }
+        }
+        
+        /// <summary>
+        /// Expand this function for left click down events
+        /// </summary>
+        private void ProcessLeftClickDownEvent()
+        {
+            // Selection.activeObject = this;
+            
+            //Toggle node selection
+            isSelected = !isSelected;
+        }
 #endif
         #endregion
     }

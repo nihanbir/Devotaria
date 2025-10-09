@@ -9,6 +9,7 @@ namespace NodeGraph.Editor
     {
         private GUIStyle _roomNodeStyle;
         private static RoomNodeGraphSO _currentRoomNodeGraph;
+        private RoomNodeSO _currentRoomNode = null;
         private RoomNodeTypeListSO _roomNodeTypeList;
         
         private const float NodeWidth = 200f;
@@ -78,7 +79,38 @@ namespace NodeGraph.Editor
 
         private void ProcessEvents(Event currentEvent)
         {
-            ProcessRoomNodeGraphEvents(currentEvent);
+            
+            // Set the current room node if the node is null or if the mouse is not currently dragging the node 
+            if (!_currentRoomNode || _currentRoomNode.isLeftClickDragging == false)
+            {
+                _currentRoomNode = GetHoveredRoomNode(currentEvent);
+            }
+            
+            // If the current room node is null then process the room node graph events
+            if (!_currentRoomNode)
+            {
+                ProcessRoomNodeGraphEvents(currentEvent);
+            }
+            // Else process the room node events
+            else
+            {
+                _currentRoomNode.ProcessEvents(currentEvent);
+            }
+        }
+
+        /// <summary>
+        /// Return the room node that is currently being hovered over by the mouse
+        /// </summary>
+        private RoomNodeSO GetHoveredRoomNode(Event currentEvent)
+        {
+            for (int i = _currentRoomNodeGraph.roomNodeList.Count - 1; i >= 0; i--)
+            {
+                if (_currentRoomNodeGraph.roomNodeList[i].rect.Contains(currentEvent.mousePosition))
+                {
+                    return _currentRoomNodeGraph.roomNodeList[i];
+                }
+            }
+            return null;
         }
 
         private void ProcessRoomNodeGraphEvents(Event currentEvent)
