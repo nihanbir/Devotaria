@@ -147,11 +147,32 @@ namespace NodeGraph.Editor
                     ProcessMouseDownEvent(currentEvent);
                     break;
                 
+                case EventType.MouseUp:
+                    ProcessMouseUpEvent(currentEvent);
+                    break;
+                
                 case EventType.MouseDrag:
                     ProcessMouseDragEvent(currentEvent);
                     break;
                 
             }
+        }
+
+        private void ProcessMouseUpEvent(Event currentEvent)
+        {
+            // If releasing the right mouse button
+            // and currently dragging a line from a room node
+            if (currentEvent.button == 1 && _currentRoomNodeGraph.roomNodeToDrawLineFrom)
+            {
+                ClearLineDrag();
+            } 
+        }
+
+        private void ClearLineDrag()
+        {
+            _currentRoomNodeGraph.roomNodeToDrawLineFrom = null;
+            _currentRoomNodeGraph.linePosition = Vector2.zero;
+            GUI.changed = true;
         }
 
         private void ProcessMouseDragEvent(Event currentEvent)
