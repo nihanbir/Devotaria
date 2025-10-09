@@ -20,6 +20,7 @@ namespace NodeGraph.Editor
         
         // Connecting line layout constants
         private const float ConnectingLineWidth = 3f;
+        private const float ConnectingLineArrowSize = 6f;
         
         //Define where the editor window will be created in the Unity menu
         [MenuItem("Room Node Graph Editor", menuItem = "Window/Dungeon Editor/Room Node Graph Editor")]
@@ -114,6 +115,26 @@ namespace NodeGraph.Editor
             // get the center of the parent and child nodes
             Vector2 start = parentRoomNode.rect.center;
             Vector2 end = childRoomNode.rect.center;
+            
+            // calculate the midpoint of the line
+            Vector2 mid = (start + end) / 2;
+            
+            // Calculate the direction vector
+            Vector2 direction = (end - start).normalized;
+            
+            // Calculate the perpendicular vector to have the arrow point in the correct direction
+            Vector2 perpendicular = new Vector2(-direction.y, direction.x);
+            
+            // Calculate the arrow tail points
+            Vector2 arrowTailPoint1 = mid + perpendicular * ConnectingLineArrowSize;
+            Vector2 arrowTailPoint2 = mid - perpendicular * ConnectingLineArrowSize;
+            
+            // Calculate the arrow head point
+            Vector2 arrowHeadPoint = mid + direction * ConnectingLineArrowSize;
+            
+            // Draw the lines from the arrow head to the arrow tail
+            Handles.DrawBezier(arrowHeadPoint, arrowTailPoint1, arrowHeadPoint, arrowTailPoint1, Color.white, null, ConnectingLineWidth);
+            Handles.DrawBezier(arrowHeadPoint, arrowTailPoint2, arrowHeadPoint, arrowTailPoint2, Color.white, null, ConnectingLineWidth);
             
             // Draw line between the two nodes
             Handles.DrawBezier(start, end, start, end, Color.white, null, ConnectingLineWidth);
