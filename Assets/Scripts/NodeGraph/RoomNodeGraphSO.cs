@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,13 +14,32 @@ namespace NodeGraph
         
         //Create a dictionary to store the room nodes by unique GUID
         [HideInInspector] public Dictionary<string, RoomNodeSO> roomNodeDictionary = new Dictionary<string, RoomNodeSO>();
-        
+
+        private void Awake()
+        {
+            LoadRoomNodeDictionary();
+        }
+
+        private void LoadRoomNodeDictionary()
+        {
+            // Populate the dictionary with the room nodes
+            foreach (var roomNode in roomNodeList)
+            {
+                roomNodeDictionary[roomNode.id] = roomNode;
+            }
+        }
+
         #region Editor Code
 #if UNITY_EDITOR
         [HideInInspector] public RoomNodeSO roomNodeToDrawLineFrom = null;
         [HideInInspector] public Vector2 linePosition;
-        [HideInInspector] public RoomNodeSO roomNodeToDrawLineTo = null;
 
+        // Repopulate the dictionary when the SO is edited in the editor
+        public void OnValidate()
+        {
+            LoadRoomNodeDictionary();
+        }
+        
         public void SetNodeToDrawConnectionLineFrom(RoomNodeSO roomNode, Vector2 position)
         {
             roomNodeToDrawLineFrom = roomNode;

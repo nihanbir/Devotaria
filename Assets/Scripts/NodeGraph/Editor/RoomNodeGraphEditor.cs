@@ -72,6 +72,8 @@ namespace NodeGraph.Editor
                 DrawDraggedLine();
                 
                 ProcessEvents(Event.current);
+
+                DrawRoomConnections();
                 
                 DrawRoomNodes();
             }
@@ -80,6 +82,43 @@ namespace NodeGraph.Editor
             {
                 Repaint();
             }
+        }
+
+        private void DrawRoomConnections()
+        {
+            // loop through all room nodes
+            foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
+            {
+                if (roomNode.childRoomNodeIDList.Count > 0)
+                {
+                    // loop through all child room nodes
+                    foreach (var childID in roomNode.childRoomNodeIDList)
+                    {
+                        // get child room node from dictionary
+                        if (_currentRoomNodeGraph.roomNodeDictionary.ContainsKey(childID))
+                        {
+                            DrawConnectionLine(roomNode, _currentRoomNodeGraph.roomNodeDictionary[childID]);
+                            GUI.changed = true;
+                        }
+                    }
+                }
+               
+            }
+        }
+
+        /// <summary>
+        /// Draw connection line between the parent node and child node
+        /// </summary>
+        private void DrawConnectionLine(RoomNodeSO parentRoomNode, RoomNodeSO childRoomNode)
+        {
+            // get the center of the parent and child nodes
+            Vector2 start = parentRoomNode.rect.center;
+            Vector2 end = childRoomNode.rect.center;
+            
+            // Draw line between the two nodes
+            Handles.DrawBezier(start, end, start, end, Color.white, null, ConnectingLineWidth);
+            
+            GUI.changed = true;
         }
 
         private void DrawDraggedLine()
@@ -250,6 +289,9 @@ namespace NodeGraph.Editor
             
             AssetDatabase.AddObjectToAsset(roomNode, _currentRoomNodeGraph);
             AssetDatabase.SaveAssets();
+            
+            // Repopulate the dictionary
+            _currentRoomNodeGraph.OnValidate();
         }
         
         private void DrawRoomNodes()
