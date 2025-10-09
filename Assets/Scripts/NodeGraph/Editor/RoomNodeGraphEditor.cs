@@ -12,10 +12,14 @@ namespace NodeGraph.Editor
         private RoomNodeSO _currentRoomNode = null;
         private RoomNodeTypeListSO _roomNodeTypeList;
         
+        // Node layout constants
         private const float NodeWidth = 200f;
         private const float NodeHeight = 75f;
         private const int NodePadding = 25;
         private const int NodeBorder = 12;
+        
+        // Connecting line layout constants
+        private const float ConnectingLineWidth = 3f;
         
         //Define where the editor window will be created in the Unity menu
         [MenuItem("Room Node Graph Editor", menuItem = "Window/Dungeon Editor/Room Node Graph Editor")]
@@ -65,7 +69,10 @@ namespace NodeGraph.Editor
             //If a scriptable object of type RoomNodeGraphSO has been selected then process
             if (_currentRoomNodeGraph)
             {
+                DrawDraggedLine();
+                
                 ProcessEvents(Event.current);
+                
                 DrawRoomNodes();
             }
 
@@ -75,19 +82,38 @@ namespace NodeGraph.Editor
             }
         }
 
-        
+        private void DrawDraggedLine()
+        {
+            if (_currentRoomNodeGraph.linePosition != Vector2.zero)
+            {
+                // Draw line from node to line position
+                Handles.DrawBezier(_currentRoomNodeGraph.roomNodeToDrawLineFrom.rect.center,
+                    _currentRoomNodeGraph.linePosition,
+                    _currentRoomNodeGraph.roomNodeToDrawLineFrom.rect.center, 
+                    _currentRoomNodeGraph.linePosition, 
+                    Color.white, 
+                    null, 
+                    ConnectingLineWidth);
+            }
+        }
+
 
         private void ProcessEvents(Event currentEvent)
         {
             
-            // Set the current room node if the node is null or if the mouse is not currently dragging the node 
+            
+            // If the node is null
+            // or if the mouse is not currently dragging the node 
+            // then set the current room node
             if (!_currentRoomNode || _currentRoomNode.isLeftClickDragging == false)
             {
                 _currentRoomNode = GetHoveredRoomNode(currentEvent);
             }
             
-            // If the current room node is null then process the room node graph events
-            if (!_currentRoomNode)
+            // If the current room node is null,
+            // or we are currently dragging a line from the room node
+            // then process the room node graph events
+            if (!_currentRoomNode || _currentRoomNodeGraph.roomNodeToDrawLineFrom)
             {
                 ProcessRoomNodeGraphEvents(currentEvent);
             }
@@ -120,10 +146,36 @@ namespace NodeGraph.Editor
                 case EventType.MouseDown:
                     ProcessMouseDownEvent(currentEvent);
                     break;
-               
+                
+                case EventType.MouseDrag:
+                    ProcessMouseDragEvent(currentEvent);
+                    break;
+                
+            }
+        }
+
+        private void ProcessMouseDragEvent(Event currentEvent)
+        {
+            if (currentEvent.button == 1)
+            {
+                ProcessRightMouseDragEvent(currentEvent);
             }
         }
         
+        private void ProcessRightMouseDragEvent(Event currentEvent)
+        {
+            if (_currentRoomNodeGraph.roomNodeToDrawLineFrom)
+            {
+                DragConnectingLine(currentEvent.delta);
+                GUI.changed = true;
+            }
+        }
+
+        private void DragConnectingLine(Vector2 currentEventDelta)
+        {
+            _currentRoomNodeGraph.linePosition += currentEventDelta;
+        }
+
         /// <summary>
         /// Process mouse down events on the room node graph (not over a node)
         /// </summary>

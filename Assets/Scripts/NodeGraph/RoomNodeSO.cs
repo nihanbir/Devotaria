@@ -145,8 +145,19 @@ namespace NodeGraph
             {
                 ProcessLeftClickDownEvent();
             }
+            else if (currentEvent.button == 1)
+            {
+                ProcessRightClickDownEvent(currentEvent);
+            }
         }
-        
+        /// <summary>
+        /// Expand this function for right click down events
+        /// </summary>
+        private void ProcessRightClickDownEvent(Event currentEvent)
+        {
+            roomNodeGraph.SetNodeToDrawConnectionLineFrom(this, currentEvent.mousePosition);
+        }
+
         /// <summary>
         /// Expand this function for left click down events
         /// </summary>

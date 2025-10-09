@@ -72,8 +72,8 @@ MonoBehaviour:
   roomNodeTypeList: {fileID: 11400000, guid: 925f552d46739d84999fe4456c5e6341, type: 2}
   rect:
     serializedVersion: 2
-    x: 645
-    y: 377
+    x: 575
+    y: 367
     width: 75
     height: 200
   isLeftClickDragging: 0
@@ -95,3 +95,6 @@ MonoBehaviour:
   - {fileID: -6118971213433076634}
   - {fileID: -4034082778916578179}
   - {fileID: -6702258653826266100}
+  roomNodeToDrawLineFrom: {fileID: -4034082778916578179}
+  linePosition: {x: 928, y: 493}
+  roomNodeToDrawLineTo: {fileID: 0}
