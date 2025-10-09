@@ -152,7 +152,7 @@ namespace NodeGraph
         /// </summary>
         private void ProcessLeftClickDownEvent()
         {
-            // Selection.activeObject = this;
+            Selection.activeObject = this;
             
             //Toggle node selection
             isSelected = !isSelected;
