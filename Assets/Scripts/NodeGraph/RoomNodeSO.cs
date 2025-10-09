@@ -168,6 +168,25 @@ namespace NodeGraph
             //Toggle node selection
             isSelected = !isSelected;
         }
+
+        /// <summary>
+        /// Add childID to the node (returns true if successful)
+        /// </summary>
+        
+        public bool AddChildRoomNodeIDToRoomNode(string childID)
+        {
+            childRoomNodeIDList.Add(childID);
+            return true;
+        }
+
+        /// <summary>
+        /// Add parentID to the node (returns true if successful)
+        /// </summary>
+        public bool AddParentRoomNodeIDToRoomNode(string parentID)
+        {
+            parentRoomNodeIDList.Add(parentID);
+            return true;
+        }
 #endif
         #endregion
     }

@@ -164,7 +164,19 @@ namespace NodeGraph.Editor
             // and currently dragging a line from a room node
             if (currentEvent.button == 1 && _currentRoomNodeGraph.roomNodeToDrawLineFrom)
             {
-                ClearLineDrag();
+                
+                RoomNodeSO roomNode = GetHoveredRoomNode(currentEvent);
+                
+                if (roomNode)
+                {
+                    // add the child room node to the parent room node
+                    if (_currentRoomNodeGraph.roomNodeToDrawLineFrom.AddChildRoomNodeIDToRoomNode(roomNode.id))
+                    {
+                        // if successful, add the parent room node to the child room node
+                        roomNode.AddParentRoomNodeIDToRoomNode(_currentRoomNodeGraph.roomNodeToDrawLineFrom.id);
+                    }
+                    ClearLineDrag();
+                }
             } 
         }
 
