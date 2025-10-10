@@ -121,13 +121,18 @@ namespace NodeGraph
         {
             switch (currentEvent.button)
             {
-                case 0:
-                    ProcessLeftClickDownEvent();
-                    break;
                 case 1:
                     ProcessRightClickDownEvent(currentEvent);
                     break;
             }
+        }
+        
+        /// <summary>
+        /// Expand this function for right click down events
+        /// </summary>
+        private void ProcessRightClickDownEvent(Event currentEvent)
+        {
+            roomNodeGraph.SetNodeToDrawConnectionLineFrom(this, currentEvent.mousePosition);
         }
         
         private void ProcessMouseUpEvent(Event currentEvent)
@@ -135,6 +140,32 @@ namespace NodeGraph
             if (currentEvent.button == 0)
             {
                 ProcessLeftClickUpEvent();
+            }
+        }
+        
+        /// <summary>
+        /// Expand this function for left click up events
+        /// </summary>
+        private void ProcessLeftClickUpEvent()
+        {
+            if (isLeftClickDragging)
+            {
+                isLeftClickDragging = false;
+                return;
+            }
+
+            if (isSelected)
+            {
+                isSelected = false;
+                Selection.activeObject = null;
+            }
+            else
+            {
+                isSelected = true;
+                if (!Selection.Contains(this))
+                {
+                    Selection.activeObject = this;
+                }
             }
         }
         
@@ -152,6 +183,11 @@ namespace NodeGraph
         private void ProcessLeftMouseDragEvent(Event currentEvent)
         {
             isLeftClickDragging = true;
+            if (!Selection.Contains(this))
+            {
+                Selection.activeObject = this;
+            }
+            isSelected = true;
             
             //.delta captures the mouse movement since the last frame
             DragMode(currentEvent.delta);
@@ -162,36 +198,6 @@ namespace NodeGraph
         {
             rect.position += currentEventDelta;
             EditorUtility.SetDirty(this);
-        }
-        
-        /// <summary>
-        /// Expand this function for left click up events
-        /// </summary>
-        private void ProcessLeftClickUpEvent()
-        {
-            if (isLeftClickDragging)
-            {
-                isLeftClickDragging = false;
-            }
-        }
-        
-        /// <summary>
-        /// Expand this function for right click down events
-        /// </summary>
-        private void ProcessRightClickDownEvent(Event currentEvent)
-        {
-            roomNodeGraph.SetNodeToDrawConnectionLineFrom(this, currentEvent.mousePosition);
-        }
-
-        /// <summary>
-        /// Expand this function for left click down events
-        /// </summary>
-        private void ProcessLeftClickDownEvent()
-        {
-            Selection.activeObject = this;
-            
-            //Toggle node selection
-            isSelected = !isSelected;
         }
         #endregion
         
