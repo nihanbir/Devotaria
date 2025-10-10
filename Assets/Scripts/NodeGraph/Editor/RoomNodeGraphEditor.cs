@@ -8,6 +8,7 @@ namespace NodeGraph.Editor
     public class RoomNodeGraphEditor : EditorWindow
     {
         private GUIStyle _roomNodeStyle;
+        private GUIStyle _roomNodeSelectedStyle;
         private static RoomNodeGraphSO _currentRoomNodeGraph;
         private RoomNodeSO _currentRoomNode = null;
         private RoomNodeTypeListSO _roomNodeTypeList;
@@ -32,6 +33,9 @@ namespace NodeGraph.Editor
         
         private void OnEnable()
         {
+            //Subscribe to selection changed event
+            Selection.selectionChanged += InspectorSelectionChanged;
+            
             //Define node layout style
             _roomNodeStyle = new GUIStyle
             {
@@ -44,8 +48,34 @@ namespace NodeGraph.Editor
                 border = new RectOffset(NodeBorder, NodeBorder, NodeBorder, NodeBorder)
             };
             
+            //Define selected node style
+            _roomNodeSelectedStyle = new GUIStyle
+            {
+                normal =
+                {
+                    background = EditorGUIUtility.Load("node1 on") as Texture2D,
+                    textColor = Color.white
+                },
+                padding = new RectOffset(NodePadding, NodePadding, NodePadding, NodePadding),
+                border = new RectOffset(NodeBorder, NodeBorder, NodeBorder, NodeBorder)
+            };
+            
             //Load room node type list
             _roomNodeTypeList = GameResources.Instance.roomNodeTypeList;
+        }
+
+        private void OnDisable()
+        {
+            //Unsubscribe from selection changed event
+            Selection.selectionChanged -= InspectorSelectionChanged;
+        }
+        
+        private void InspectorSelectionChanged()
+        {
+            RoomNodeGraphSO roomNodeGraph = Selection.activeObject as RoomNodeGraphSO;
+            if (!roomNodeGraph) return;
+            _currentRoomNodeGraph = roomNodeGraph;
+            GUI.changed = true;
         }
 
         /// <summary>
@@ -272,9 +302,27 @@ namespace NodeGraph.Editor
         /// </summary>
         private void ProcessMouseDownEvent(Event currentEvent)
         {
-            if (currentEvent.button == 1)
+            switch (currentEvent.button)
             {
-                ShowContextMenu(currentEvent.mousePosition);
+                case 0:
+                    ClearLineDrag();
+                    ClearAllSelectedRoomNodes();
+                    break;
+                case 1:
+                    ShowContextMenu(currentEvent.mousePosition);
+                    break;
+            }
+        }
+
+        private void ClearAllSelectedRoomNodes()
+        {
+            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            {
+                if (roomNode.isSelected)
+                {
+                    roomNode.isSelected = false;
+                    GUI.changed = true;
+                }
             }
         }
 
@@ -323,7 +371,7 @@ namespace NodeGraph.Editor
         {
             foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
             {
-                roomNode.Draw(_roomNodeStyle);
+                roomNode.Draw(roomNode.isSelected ? _roomNodeSelectedStyle : _roomNodeStyle);
             }
 
             GUI.changed = true;
