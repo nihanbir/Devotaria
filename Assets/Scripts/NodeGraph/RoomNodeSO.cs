@@ -154,7 +154,6 @@ namespace NodeGraph
                 isLeftClickDragging = false;
             }
         }
-                ProcessLeftClickDownEvent();
         
         /// <summary>
         /// Expand this function for right click down events
