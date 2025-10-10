@@ -13,7 +13,7 @@ namespace NodeGraph
         [HideInInspector] public List<RoomNodeSO> roomNodeList = new List<RoomNodeSO>();
         
         //Create a dictionary to store the room nodes by unique GUID
-        [HideInInspector] public Dictionary<string, RoomNodeSO> roomNodeDictionary = new Dictionary<string, RoomNodeSO>();
+        [HideInInspector] public Dictionary<string, RoomNodeSO> RoomNodeDictionary = new Dictionary<string, RoomNodeSO>();
 
         private void Awake()
         {
@@ -25,10 +25,18 @@ namespace NodeGraph
             // Populate the dictionary with the room nodes
             foreach (var roomNode in roomNodeList)
             {
-                roomNodeDictionary[roomNode.id] = roomNode;
+                RoomNodeDictionary[roomNode.id] = roomNode;
             }
         }
 
+        /// <summary>
+        /// Get room node by room nodeID
+        /// </summary>
+        public RoomNodeSO GetRoomNode(string roomNodeID)
+        {
+            return RoomNodeDictionary.GetValueOrDefault(roomNodeID);
+        }
+        
         #region Editor Code
 #if UNITY_EDITOR
         [HideInInspector] public RoomNodeSO roomNodeToDrawLineFrom = null;

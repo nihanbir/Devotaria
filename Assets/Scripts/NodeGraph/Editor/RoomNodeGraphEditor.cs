@@ -311,9 +311,9 @@ namespace NodeGraph.Editor
                     foreach (var childID in roomNode.childRoomNodeIDList)
                     {
                         // get child room node from dictionary
-                        if (_currentRoomNodeGraph.roomNodeDictionary.ContainsKey(childID))
+                        if (_currentRoomNodeGraph.RoomNodeDictionary.ContainsKey(childID))
                         {
-                            DrawConnectionLine(roomNode, _currentRoomNodeGraph.roomNodeDictionary[childID]);
+                            DrawConnectionLine(roomNode, _currentRoomNodeGraph.RoomNodeDictionary[childID]);
                             GUI.changed = true;
                         }
                     }
