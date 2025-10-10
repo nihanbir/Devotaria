@@ -286,15 +286,21 @@ namespace NodeGraph.Editor
         }
 
         /// <summary>
-        /// Create a new room node at the mouse position with the default room node type
+        /// Add a new room node at the mouse position with the default room node type
         /// </summary>
         private void AddRoomNode(object mousePositionObject)
         {
+            // If there are no room nodes, add an entrance node first
+            if (_currentRoomNodeGraph.roomNodeList.Count == 0)
+            {
+                AddRoomNode(new Vector2(200f, 200f),_roomNodeTypeList.list.Find(x => x.isEntrance));
+            }
+            
             AddRoomNode(mousePositionObject,_roomNodeTypeList.list.Find(x => x.isNone));
         }
         
         /// <summary>
-        /// Create a new room node at the mouse position and with the specified room node type
+        /// Add a new room node at the mouse position and with the specified room node type
         /// </summary>
         private void AddRoomNode(object mousePositionObject, RoomNodeTypeSO roomNodeType)
         {
