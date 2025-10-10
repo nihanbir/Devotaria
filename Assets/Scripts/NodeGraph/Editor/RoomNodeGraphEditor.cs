@@ -222,6 +222,9 @@ namespace NodeGraph.Editor
         {
             GenericMenu contextMenu = new GenericMenu();
             contextMenu.AddItem(new GUIContent("Add Room Node"), false, () => AddRoomNode(mousePosition));
+            contextMenu.AddSeparator("");
+            contextMenu.AddItem(new GUIContent("Select All Room Nodes"), false, SelectAllRoomNodes);
+            
             contextMenu.ShowAsContext();
         }
         #endregion Event Processors
@@ -296,6 +299,15 @@ namespace NodeGraph.Editor
                     GUI.changed = true;
                 }
             }
+        }
+        
+        private void SelectAllRoomNodes()
+        {
+            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            {
+                roomNode.isSelected = true;
+            }
+            GUI.changed = true;
         }
         #endregion Room Node
         
