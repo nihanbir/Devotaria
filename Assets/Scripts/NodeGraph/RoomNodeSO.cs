@@ -76,6 +76,9 @@ namespace NodeGraph
             return roomArray;
         }
 
+        #endregion
+        
+        #region Event Processors
         public void ProcessEvents(Event currentEvent)
         {
             switch (currentEvent.type)
@@ -93,7 +96,28 @@ namespace NodeGraph
                     break;
             }
         }
-
+        
+        private void ProcessMouseDownEvent(Event currentEvent)
+        {
+            switch (currentEvent.button)
+            {
+                case 0:
+                    ProcessLeftClickDownEvent();
+                    break;
+                case 1:
+                    ProcessRightClickDownEvent(currentEvent);
+                    break;
+            }
+        }
+        
+        private void ProcessMouseUpEvent(Event currentEvent)
+        {
+            if (currentEvent.button == 0)
+            {
+                ProcessLeftClickUpEvent();
+            }
+        }
+        
         private void ProcessMouseDragEvent(Event currentEvent)
         {
             if (currentEvent.button == 0)
@@ -119,15 +143,7 @@ namespace NodeGraph
             rect.position += currentEventDelta;
             EditorUtility.SetDirty(this);
         }
-
-        private void ProcessMouseUpEvent(Event currentEvent)
-        {
-            if (currentEvent.button == 0)
-            {
-                ProcessLeftClickUpEvent();
-            }
-        }
-
+        
         /// <summary>
         /// Expand this function for left click up events
         /// </summary>
@@ -138,18 +154,8 @@ namespace NodeGraph
                 isLeftClickDragging = false;
             }
         }
-
-        private void ProcessMouseDownEvent(Event currentEvent)
-        {
-            if (currentEvent.button == 0)
-            {
                 ProcessLeftClickDownEvent();
-            }
-            else if (currentEvent.button == 1)
-            {
-                ProcessRightClickDownEvent(currentEvent);
-            }
-        }
+        
         /// <summary>
         /// Expand this function for right click down events
         /// </summary>
@@ -168,11 +174,12 @@ namespace NodeGraph
             //Toggle node selection
             isSelected = !isSelected;
         }
-
+        #endregion
+        
+        #region Node Relationships
         /// <summary>
         /// Add childID to the node (returns true if successful)
         /// </summary>
-        
         public bool AddChildRoomNodeIDToRoomNode(string childID)
         {
             childRoomNodeIDList.Add(childID);
@@ -189,5 +196,6 @@ namespace NodeGraph
         }
 #endif
         #endregion
+        
     }
 }
