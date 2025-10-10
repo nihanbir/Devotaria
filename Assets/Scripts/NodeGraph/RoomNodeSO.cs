@@ -15,8 +15,8 @@ namespace NodeGraph
         public RoomNodeTypeSO roomNodeType;
         [HideInInspector] public RoomNodeTypeListSO roomNodeTypeList;
         
-        #region Editor Code
 #if UNITY_EDITOR
+        #region Editor Code
 
         [HideInInspector] public Rect rect;
         [HideInInspector] public bool isLeftClickDragging;
@@ -193,8 +193,8 @@ namespace NodeGraph
             parentRoomNodeIDList.Add(parentID);
             return true;
         }
-#endif
         #endregion
+#endif
         
     }
 }
