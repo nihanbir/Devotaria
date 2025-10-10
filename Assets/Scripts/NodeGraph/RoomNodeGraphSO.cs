@@ -11,6 +11,7 @@ namespace NodeGraph
     {
         [HideInInspector] public RoomNodeTypeListSO roomNodeTypeList;
         [HideInInspector] public List<RoomNodeSO> roomNodeList = new List<RoomNodeSO>();
+        [HideInInspector] public bool hasConnectedBossRoom;
         
         //Create a dictionary to store the room nodes by unique GUID
         [HideInInspector] public Dictionary<string, RoomNodeSO> RoomNodeDictionary = new Dictionary<string, RoomNodeSO>();
