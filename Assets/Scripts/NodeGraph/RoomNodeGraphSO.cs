@@ -38,6 +38,14 @@ namespace NodeGraph
             return RoomNodeDictionary.GetValueOrDefault(roomNodeID);
         }
         
+        //TODO: See if you will need this
+        // Update this flag whenever connections change
+        // public void UpdateBossRoomStatus()
+        // {
+        //     hasConnectedBossRoom = roomNodeList.Exists(node => 
+        //         node.roomNodeType.isBossRoom && node.parentRoomNodeIDList.Count > 0);
+        // }
+        
         #region Editor Code
 #if UNITY_EDITOR
         [HideInInspector] public RoomNodeSO roomNodeToDrawLineFrom = null;
