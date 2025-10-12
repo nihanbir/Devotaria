@@ -55,7 +55,6 @@ namespace NodeGraph
                 // Display a label that can't be changed
                 EditorGUILayout.LabelField(roomNodeType.roomNodeTypeName);
                 
-                //TODO: Need to set this to false when the connection is removed
                 if (roomNodeType.isBossRoom)
                 {
                     roomNodeGraph.hasConnectedBossRoom = true;
@@ -69,6 +68,34 @@ namespace NodeGraph
                 int selection = EditorGUILayout.Popup(selected, GetRoomNodeTypesToDisplay());
                 
                 roomNodeType = roomNodeTypeList.list[selection];
+
+                // If the room node type has changed, check if the room node can be connected to the current room node
+                if (roomNodeTypeList.list[selected].isCorridor && !roomNodeTypeList.list[selection].isCorridor
+                    || !roomNodeTypeList.list[selected].isCorridor && roomNodeTypeList.list[selection].isCorridor
+                    || !roomNodeTypeList.list[selected].isBossRoom && roomNodeTypeList.list[selection].isBossRoom)
+                {
+                    if (childRoomNodeIDList.Count > 0)
+                    {
+                        for (int i = childRoomNodeIDList.Count - 1; i >= 0 ; i--)
+                        {
+                            RoomNodeSO childNode = roomNodeGraph.GetRoomNode(childRoomNodeIDList[i]);
+
+                            if (!childNode) continue;
+                        
+                            // If the child node is a boss room, remove the connection to the boss room
+                            if (childNode.roomNodeType.isBossRoom || roomNodeType.isBossRoom)
+                            {
+                                roomNodeGraph.hasConnectedBossRoom = false;
+                            }
+                        
+                            // Remove childID from the room node
+                            RemoveChildRoomNodeIDFromRoomNode(childNode.id);
+                            
+                            // Remove parentID from the child room node
+                            childNode.RemoveParentRoomNodeIDFromRoomNode(id);
+                        }
+                    }
+                }
             }
                 
             if (EditorGUI.EndChangeCheck())
@@ -221,6 +248,26 @@ namespace NodeGraph
         public bool AddParentRoomNodeIDToRoomNode(string parentID)
         {
             parentRoomNodeIDList.Add(parentID);
+            return true;
+        }
+
+        /// <summary>
+        /// Remove childID from the node (returns true if successful)
+        /// </summary>
+        public bool RemoveChildRoomNodeIDFromRoomNode(string childID)
+        {
+            if (!childRoomNodeIDList.Contains(childID)) return false;
+            childRoomNodeIDList.Remove(childID);
+            return true;
+        }
+
+        /// <summary>
+        /// Remove parentID from the node (returns true if successful)
+        /// </summary>
+        public bool RemoveParentRoomNodeIDFromRoomNode(string parentID)
+        {
+            if (!parentRoomNodeIDList.Contains(parentID)) return false;
+            parentRoomNodeIDList.Remove(parentID);
             return true;
         }
         

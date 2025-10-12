@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using GameManager;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -225,6 +226,11 @@ namespace NodeGraph.Editor
             contextMenu.AddSeparator("");
             contextMenu.AddItem(new GUIContent("Select All Room Nodes"), false, SelectAllRoomNodes);
             
+            //TODO: Change this to buttons instead of menu items
+            contextMenu.AddSeparator("");
+            contextMenu.AddItem(new GUIContent("Delete Selected Room Node Links"), false, DeleteSelectedRoomNodeLinks);
+            contextMenu.AddItem(new GUIContent("Delete Selected Room Nodes"), false, DeleteSelectedRoomNodes);
+            
             contextMenu.ShowAsContext();
         }
         #endregion Event Processors
@@ -263,7 +269,83 @@ namespace NodeGraph.Editor
             // Repopulate the dictionary
             _currentRoomNodeGraph.OnValidate();
         }
-        
+
+        private void DeleteSelectedRoomNodeLinks()
+        {
+            // Itarate through all selected room nodes
+            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            {
+                // If the room node is selected
+                if (roomNode.isSelected && roomNode.childRoomNodeIDList.Count > 0)
+                {
+                    for (int i = roomNode.childRoomNodeIDList.Count - 1; i >= 0 ; i--)
+                    {
+                        RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(roomNode.childRoomNodeIDList[i]);
+
+                        if (!childNode && !childNode.isSelected) continue;
+                        
+                        // If the child node is a boss room, remove the connection to the boss room
+                        if (childNode.roomNodeType.isBossRoom || roomNode.roomNodeType.isBossRoom)
+                        {
+                            _currentRoomNodeGraph.hasConnectedBossRoom = false;
+                        }
+                        
+                        // Remove childID from the room node
+                        roomNode.RemoveChildRoomNodeIDFromRoomNode(childNode.id);
+                            
+                        // Remove parentID from the child room node
+                        childNode.RemoveParentRoomNodeIDFromRoomNode(roomNode.id);
+                    }
+                }
+            }
+            ClearAllSelectedRoomNodes();
+        }
+
+        //TODO:Clean this up
+        private void DeleteSelectedRoomNodes()
+        {
+            Queue<RoomNodeSO> roomNodesToDelete = new Queue<RoomNodeSO>();
+
+            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            {
+                if (roomNode.isSelected && !roomNode.roomNodeType.isEntrance)
+                {
+                    roomNodesToDelete.Enqueue(roomNode);
+
+                    if (roomNode.roomNodeType.isBossRoom)
+                    {
+                        _currentRoomNodeGraph.hasConnectedBossRoom = false;
+                    }
+                    
+                    foreach (string childID in roomNode.childRoomNodeIDList)
+                    {
+                        RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(childID);
+                        if (!childNode) continue;
+                        childNode.RemoveParentRoomNodeIDFromRoomNode(roomNode.id);
+                    }
+                    
+                    foreach (string parentID in roomNode.parentRoomNodeIDList)
+                    {
+                        RoomNodeSO parentNode = _currentRoomNodeGraph.GetRoomNode(parentID);
+                        if (!parentNode) continue;
+                        parentNode.RemoveChildRoomNodeIDFromRoomNode(roomNode.id);
+                    }
+                }
+
+            }
+            while (roomNodesToDelete.Count > 0)
+            {
+                RoomNodeSO nodeToDelete = roomNodesToDelete.Dequeue();
+                
+                _currentRoomNodeGraph.RoomNodeDictionary.Remove(nodeToDelete.id);
+                
+                _currentRoomNodeGraph.roomNodeList.Remove(nodeToDelete);
+                
+                DestroyImmediate(nodeToDelete, true);
+                
+                AssetDatabase.SaveAssets();
+            }
+        }
         private void DrawRoomNodes()
         {
             foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
