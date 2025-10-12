@@ -13,6 +13,10 @@ namespace NodeGraph.Editor
         private GUIStyle _roomNodeStyle;
         private GUIStyle _roomNodeSelectedStyle;
         private static RoomNodeGraphSO _currentRoomNodeGraph;
+
+        private Vector2 _graphOffset;
+        private Vector2 _graphDrag;
+        
         private RoomNodeSO _currentRoomNode = null;
         private RoomNodeTypeListSO _roomNodeTypeList;
         
@@ -25,6 +29,10 @@ namespace NodeGraph.Editor
         // Connecting line layout constants
         private const float ConnectingLineWidth = 3f;
         private const float ConnectingLineArrowSize = 6f;
+        
+        //Grid Spacing
+        private const float GridLarge = 100f;
+        private const float GridSmall = 25f;
         
         #endregion Variables
         
@@ -105,6 +113,10 @@ namespace NodeGraph.Editor
             //If a SO of type RoomNodeGraphSO has been selected then process
             if (_currentRoomNodeGraph)
             {
+                DrawBackgroundGrid(GridSmall, 0.2f, Color.gray);
+                DrawBackgroundGrid(GridLarge, 0.3f, Color.gray);
+                
+                
                 DrawDraggedLine();
                 
                 ProcessEvents(Event.current);
@@ -119,12 +131,55 @@ namespace NodeGraph.Editor
                 Repaint();
             }
         }
-        
+
+        /// <summary>
+        /// Draw a background grid for the room node graph editor
+        /// </summary>
+        private void DrawBackgroundGrid(float gridSize, float gridOpacity, Color gridColor)
+        {
+            int verticalLineCount = Mathf.CeilToInt(position.width + gridSize / gridSize);
+            int horizontalLineCount = Mathf.CeilToInt(position.height + gridSize / gridSize);
+            
+            Handles.color = new Color(gridColor.r, gridColor.g, gridColor.b, gridOpacity);
+            
+            // Graph offset based on the graph drag
+            // We only need half the graph drag because the grid is symmetrical
+            _graphOffset += _graphDrag * 0.5f;
+            
+            // How much we need to offset each line that we are going to draw
+            Vector3 gridOffset = new Vector3(_graphOffset.x % gridSize, _graphOffset.y % gridSize, 0);
+
+           // I need to learn this better, so I tried to take notes on it.
+            for (int i = 0; i < verticalLineCount; i++)
+            {
+                Handles.DrawLine(new Vector3(gridSize * i,  // For each index in our iteration, we multiply that by the grid size to get our position on the x axis.
+                                             -gridSize, // And then on the y-axis, we start drawing from minus grid size. This is where we've got our overlap, so we want to start drawing outside the screen slightly.
+                                             0) 
+                                             + gridOffset, // And then we add in the grid offsets. So this is how much we're offset in the drawing of the line.
+                                new Vector3(gridSize * i, 
+                                            position.height + gridSize, // Instead of starting in the Y position minus grid size, we end at position height plus grid size. So again, this just creates a bit of overlap in the vertical direction.
+                                            0) 
+                                            + gridOffset);
+               // So this will draw all of our vertical lines, and then we need to do the same for the horizontal lines.
+            }
+            
+            for (int j = 0; j < horizontalLineCount; j++)
+            {
+                Handles.DrawLine(new Vector3(-gridSize, gridSize * j, 0) + gridOffset, new Vector3(position.width + gridSize, gridSize * j, 0) + gridOffset);
+            }
+            
+            Handles.color = Color.white;
+        }
+
         #endregion Graph Editor SO Asset
         
         #region Event Processors
         private void ProcessEvents(Event currentEvent)
         {
+            
+            // Reset graph drag
+            _graphDrag = Vector2.zero;
+            
             // If the node is null
             // or if the mouse is not currently dragging the node 
             // then set the current room node
@@ -208,6 +263,11 @@ namespace NodeGraph.Editor
             {
                 ProcessRightMouseDragEvent(currentEvent);
             }
+
+            if (currentEvent.button == 0)
+            {
+                ProcessLeftMouseDragEvent(currentEvent.delta);
+            }
         }
         
         private void ProcessRightMouseDragEvent(Event currentEvent)
@@ -217,6 +277,18 @@ namespace NodeGraph.Editor
                 DragConnectingLine(currentEvent.delta);
                 GUI.changed = true;
             }
+        }
+        
+        private void ProcessLeftMouseDragEvent(Vector2 dragDelta)
+        {
+            _graphDrag = dragDelta;
+
+            for (int i = 0; i < _currentRoomNodeGraph.roomNodeList.Count; i++)
+            {
+                _currentRoomNodeGraph.roomNodeList[i].DragNode(dragDelta);
+            }
+            
+            GUI.changed = true;
         }
 
         private void ShowContextMenu(Vector2 mousePosition)
