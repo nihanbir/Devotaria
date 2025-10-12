@@ -217,11 +217,11 @@ namespace NodeGraph
             isSelected = true;
             
             //.delta captures the mouse movement since the last frame
-            DragMode(currentEvent.delta);
+            DragNode(currentEvent.delta);
             GUI.changed = true;
         }
 
-        private void DragMode(Vector2 currentEventDelta)
+        public void DragNode(Vector2 currentEventDelta)
         {
             rect.position += currentEventDelta;
             EditorUtility.SetDirty(this);
