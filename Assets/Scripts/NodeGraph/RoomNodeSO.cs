@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameManager;
 using Misc;
 using UnityEditor;
@@ -89,10 +90,10 @@ namespace NodeGraph
                             }
                         
                             // Remove childID from the room node
-                            RemoveChildRoomNodeIDFromRoomNode(childNode.id);
+                            RemoveNodeIDFromList(childRoomNodeIDList, childNode.id);
                             
                             // Remove parentID from the child room node
-                            childNode.RemoveParentRoomNodeIDFromRoomNode(id);
+                            childNode.RemoveNodeIDFromList(childNode.parentRoomNodeIDList, id);
                         }
                     }
                 }
@@ -228,49 +229,87 @@ namespace NodeGraph
         }
         #endregion
         
-        #region Node Relationships
-        
+        #region Node Connections
+
         /// <summary>
-        /// Add childID to the node (returns true if successful)
+        /// Add a child node to this node (validates and maintains bidirectional relationship)
         /// </summary>
-        public bool AddChildRoomNodeIDToRoomNode(string childID)
+        public bool AddChildRoomNodeConnection(string childID)
         {
-            // Check child node can be added validly to parent
+            // // Validate the child can be added (includes null check)
             if (!IsChildRoomValid(childID)) return false;
-            childRoomNodeIDList.Add(childID);
-            return true;
+            
+            RoomNodeSO childNode = roomNodeGraph.GetRoomNode(childID);
 
+            // Add to both sides of the relationship
+            bool childAdded = AddNodeIDToList(childRoomNodeIDList, childID);
+            bool parentAdded = childNode.AddNodeIDToList(childNode.parentRoomNodeIDList, id);
+
+            return childAdded && parentAdded;
         }
 
         /// <summary>
-        /// Add parentID to the node (returns true if successful)
+        /// Remove a child node from this node (maintains bidirectional relationship)
         /// </summary>
-        public bool AddParentRoomNodeIDToRoomNode(string parentID)
+        public bool RemoveChildRoomNodeConnection(string childID)
         {
-            parentRoomNodeIDList.Add(parentID);
-            return true;
-        }
+            RoomNodeSO childNode = roomNodeGraph.GetRoomNode(childID);
+            if (!childNode) return false;
 
-        /// <summary>
-        /// Remove childID from the node (returns true if successful)
-        /// </summary>
-        public bool RemoveChildRoomNodeIDFromRoomNode(string childID)
-        {
-            if (!childRoomNodeIDList.Contains(childID)) return false;
-            childRoomNodeIDList.Remove(childID);
-            return true;
-        }
+            bool childRemoved = RemoveNodeIDFromList(childRoomNodeIDList, childID);
+            bool parentRemoved = childNode.RemoveNodeIDFromList(childNode.parentRoomNodeIDList, id);
 
+            return childRemoved || parentRemoved;
+        }
+        
         /// <summary>
-        /// Remove parentID from the node (returns true if successful)
+        /// Remove all relationships this node has with parent and child nodes
         /// </summary>
-        public bool RemoveParentRoomNodeIDFromRoomNode(string parentID)
+        public bool RemoveAllNodeConnections()
         {
-            if (!parentRoomNodeIDList.Contains(parentID)) return false;
-            parentRoomNodeIDList.Remove(parentID);
+            bool allSuccessful = true;
+            
+            foreach (string childID in childRoomNodeIDList.ToList())
+            {
+                // RemoveChildRoomNodeConnection validates the childID is valid
+                if (!RemoveChildRoomNodeConnection(childID))
+                {
+                    allSuccessful = false;
+                }
+            }
+                    
+            foreach (string parentID in parentRoomNodeIDList.ToList())
+            {
+                RoomNodeSO parentNode = roomNodeGraph.GetRoomNode(parentID);
+                if (!parentNode) continue;
+                if (!parentNode.RemoveChildRoomNodeConnection(id))
+                {
+                    allSuccessful = false;
+                }           
+            }
+            
+            return allSuccessful;       
+        }
+        
+        /// <summary>
+        /// Helper method to add an ID to a list (returns true if successfully added)
+        /// </summary>
+        private bool AddNodeIDToList(List<string> list, string idToAdd)
+        {
+            if (list.Contains(idToAdd)) return false;
+            list.Add(idToAdd);
             return true;
         }
         
+        /// <summary>
+        /// Helper method to remove an ID from a list (returns true if the ID was found and removed)
+        /// </summary>
+        private bool RemoveNodeIDFromList(List<string> list, string idToRemove)
+        {
+            if (!list.Contains(idToRemove)) return false;
+            list.Remove(idToRemove);
+            return true;
+        }
         private bool IsChildRoomValid(string childID)
         {
             RoomNodeSO childNode = roomNodeGraph.GetRoomNode(childID);
@@ -342,7 +381,7 @@ namespace NodeGraph
             return true;
         }
         
-        #endregion Node Relationships
+        #endregion Node Connections
 #endif
         
     }

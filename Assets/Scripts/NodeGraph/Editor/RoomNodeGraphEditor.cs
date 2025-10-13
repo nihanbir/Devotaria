@@ -243,30 +243,26 @@ namespace NodeGraph.Editor
             // and currently dragging a line from a room node
             if (currentEvent.button != 1 || !_currentRoomNodeGraph.roomNodeToDrawLineFrom) return;
             
-            RoomNodeSO roomNode = GetHoveredRoomNode(currentEvent);
+            RoomNodeSO hoveredRoomNode = GetHoveredRoomNode(currentEvent);
                 
-            if (roomNode)
-            {
-                // add the child room node to the parent room node
-                if (_currentRoomNodeGraph.roomNodeToDrawLineFrom.AddChildRoomNodeIDToRoomNode(roomNode.id))
-                {
-                    // if successful, add the parent room node to the child room node
-                    roomNode.AddParentRoomNodeIDToRoomNode(_currentRoomNodeGraph.roomNodeToDrawLineFrom.id);
-                }
+            if (hoveredRoomNode)
+            { 
+                _currentRoomNodeGraph.roomNodeToDrawLineFrom.AddChildRoomNodeConnection(hoveredRoomNode.id);
             }
             ClearLineDrag();
         }
         
         private void ProcessMouseDragEvent(Event currentEvent)
         {
-            if (currentEvent.button == 1)
+            switch (currentEvent.button)
             {
-                ProcessRightMouseDragEvent(currentEvent);
-            }
-
-            if (currentEvent.button == 0)
-            {
-                ProcessLeftMouseDragEvent(currentEvent.delta);
+                case 0:
+                    ProcessLeftMouseDragEvent(currentEvent.delta);
+                    break;
+                case 1:
+                    ProcessRightMouseDragEvent(currentEvent);
+                    break;
+                
             }
         }
         
@@ -362,11 +358,8 @@ namespace NodeGraph.Editor
                             _currentRoomNodeGraph.hasConnectedBossRoom = false;
                         }
                         
-                        // Remove childID from the room node
-                        roomNode.RemoveChildRoomNodeIDFromRoomNode(childNode.id);
-                            
-                        // Remove parentID from the child room node
-                        childNode.RemoveParentRoomNodeIDFromRoomNode(roomNode.id);
+                        // Remove the connection between the room nodes
+                        roomNode.RemoveChildRoomNodeConnection(childNode.id);
                     }
                 }
             }
@@ -388,20 +381,7 @@ namespace NodeGraph.Editor
                     {
                         _currentRoomNodeGraph.hasConnectedBossRoom = false;
                     }
-                    
-                    foreach (string childID in roomNode.childRoomNodeIDList)
-                    {
-                        RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(childID);
-                        if (!childNode) continue;
-                        childNode.RemoveParentRoomNodeIDFromRoomNode(roomNode.id);
-                    }
-                    
-                    foreach (string parentID in roomNode.parentRoomNodeIDList)
-                    {
-                        RoomNodeSO parentNode = _currentRoomNodeGraph.GetRoomNode(parentID);
-                        if (!parentNode) continue;
-                        parentNode.RemoveChildRoomNodeIDFromRoomNode(roomNode.id);
-                    }
+                    roomNode.RemoveAllNodeConnections();
                 }
 
             }
