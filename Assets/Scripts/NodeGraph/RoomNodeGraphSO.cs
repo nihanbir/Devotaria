@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,8 +12,11 @@ namespace NodeGraph
         [HideInInspector] public List<RoomNodeSO> roomNodeList = new List<RoomNodeSO>();
         [HideInInspector] public bool hasConnectedBossRoom;
         
+        // Collection for tracking selected room nodes
+        public List<RoomNodeSO> selectedRoomNodes = new List<RoomNodeSO>();
+
         //Create a dictionary to store the room nodes by unique GUID
-        [HideInInspector] public Dictionary<string, RoomNodeSO> RoomNodeDictionary = new Dictionary<string, RoomNodeSO>();
+        public readonly Dictionary<string, RoomNodeSO> RoomNodeDictionary = new Dictionary<string, RoomNodeSO>();
 
         private void Awake()
         {
@@ -38,17 +40,9 @@ namespace NodeGraph
             return RoomNodeDictionary.GetValueOrDefault(roomNodeID);
         }
         
-        //TODO: See if you will need this
-        // Update this flag whenever connections change
-        // public void UpdateBossRoomStatus()
-        // {
-        //     hasConnectedBossRoom = roomNodeList.Exists(node => 
-        //         node.roomNodeType.isBossRoom && node.parentRoomNodeIDList.Count > 0);
-        // }
-        
         #region Editor Code
 #if UNITY_EDITOR
-        [HideInInspector] public RoomNodeSO roomNodeToDrawLineFrom = null;
+        [HideInInspector] public RoomNodeSO roomNodeToDrawLineFrom;
         [HideInInspector] public Vector2 linePosition;
 
         // Repopulate the dictionary when the SO is edited in the editor

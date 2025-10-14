@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using GameManager;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -17,7 +18,8 @@ namespace NodeGraph.Editor
         private Vector2 _graphOffset;
         private Vector2 _graphDrag;
         
-        private RoomNodeSO _currentRoomNode = null;
+        private RoomNodeSO _currentRoomNode;
+        private RoomNodeSO _selectedRoomNode;
         private RoomNodeTypeListSO _roomNodeTypeList;
         
         // Node layout constants
@@ -180,10 +182,17 @@ namespace NodeGraph.Editor
             // Reset graph drag
             _graphDrag = Vector2.zero;
             
+            // Handle keyboard events at the graph level FIRST (before mouse events)
+            if (currentEvent.type == EventType.KeyDown)
+            {
+                ProcessKeyDownEvent(currentEvent);
+                return;
+            }
+            
             // If the node is null
             // or if the mouse is not currently dragging the node 
             // then set the current room node
-            if (!_currentRoomNode || _currentRoomNode.isLeftClickDragging == false)
+            if (!_currentRoomNode || !_currentRoomNode.isLeftClickDragging)
             {
                 _currentRoomNode = GetHoveredRoomNode(currentEvent);
             }
@@ -218,9 +227,13 @@ namespace NodeGraph.Editor
                     ProcessMouseDragEvent(currentEvent);
                     break;
                 
+                // case EventType.KeyDown:
+                //     ProcessKeyDownEvent(currentEvent);
+                //     break;
+                
             }
         }
-        
+
         /// <summary>
         /// Process mouse down events on the room node graph (not over a node)
         /// </summary>
@@ -239,17 +252,35 @@ namespace NodeGraph.Editor
         }
         private void ProcessMouseUpEvent(Event currentEvent)
         {
-            // If releasing the right mouse button
-            // and currently dragging a line from a room node
-            if (currentEvent.button != 1 || !_currentRoomNodeGraph.roomNodeToDrawLineFrom) return;
-            
             RoomNodeSO hoveredRoomNode = GetHoveredRoomNode(currentEvent);
-                
-            if (hoveredRoomNode)
-            { 
-                _currentRoomNodeGraph.roomNodeToDrawLineFrom.AddChildRoomNodeConnection(hoveredRoomNode.id);
+            switch (currentEvent.button)
+            {
+                case 0:
+                    if (hoveredRoomNode)
+                    {
+                        _selectedRoomNode = hoveredRoomNode;
+                        if (!_currentRoomNodeGraph.selectedRoomNodes.Contains(_selectedRoomNode))
+                        {
+                            _currentRoomNodeGraph.selectedRoomNodes.Add(_selectedRoomNode);
+                        }
+                        hoveredRoomNode.isSelected = true;
+                    }
+                    else
+                    {
+                        ClearAllSelectedRoomNodes();
+                    }
+                    break;
+                case 1:
+                    if (_currentRoomNodeGraph.roomNodeToDrawLineFrom)
+                    {
+                        if (hoveredRoomNode)
+                        { 
+                            _currentRoomNodeGraph.roomNodeToDrawLineFrom.AddChildRoomNodeConnection(hoveredRoomNode.id);
+                        }
+                        ClearLineDrag();
+                    }
+                    break;
             }
-            ClearLineDrag();
         }
         
         private void ProcessMouseDragEvent(Event currentEvent)
@@ -286,6 +317,15 @@ namespace NodeGraph.Editor
             
             GUI.changed = true;
         }
+        
+        private void ProcessKeyDownEvent(Event currentEvent)
+        {
+            if (currentEvent.keyCode == KeyCode.Delete)
+            {
+                DeleteSelectedRoomNodes();
+                // currentEvent.Use();
+            }
+        }
 
         private void ShowContextMenu(Vector2 mousePosition)
         {
@@ -297,7 +337,6 @@ namespace NodeGraph.Editor
             //TODO: Change this to buttons instead of menu items
             contextMenu.AddSeparator("");
             contextMenu.AddItem(new GUIContent("Delete Selected Room Node Links"), false, DeleteSelectedRoomNodeLinks);
-            contextMenu.AddItem(new GUIContent("Delete Selected Room Nodes"), false, DeleteSelectedRoomNodes);
             
             contextMenu.ShowAsContext();
         }
@@ -365,38 +404,47 @@ namespace NodeGraph.Editor
             }
             ClearAllSelectedRoomNodes();
         }
-
-        //TODO:Clean this up
+        
         private void DeleteSelectedRoomNodes()
         {
-            Queue<RoomNodeSO> roomNodesToDelete = new Queue<RoomNodeSO>();
-
-            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            // Use the graph's selected nodes list
+            if (_currentRoomNodeGraph.selectedRoomNodes.Count == 0) return;
+            
+            // Filter out entrance nodes upfront
+            List<RoomNodeSO> nodesToDelete = _currentRoomNodeGraph.selectedRoomNodes
+                .Where(roomNode => !roomNode.roomNodeType.isEntrance)
+                .ToList();
+    
+            // Early return if nothing to delete
+            if (nodesToDelete.Count == 0) return;
+    
+            // Check for boss rooms
+            bool hasBossRoom = nodesToDelete.Any(node => node.roomNodeType.isBossRoom);
+            if (hasBossRoom)
             {
-                if (roomNode.isSelected && !roomNode.roomNodeType.isEntrance)
-                {
-                    roomNodesToDelete.Enqueue(roomNode);
-
-                    if (roomNode.roomNodeType.isBossRoom)
-                    {
-                        _currentRoomNodeGraph.hasConnectedBossRoom = false;
-                    }
-                    roomNode.RemoveAllNodeConnections();
-                }
-
+                _currentRoomNodeGraph.hasConnectedBossRoom = false;
             }
-            while (roomNodesToDelete.Count > 0)
+    
+            // Process all deletions
+            foreach (RoomNodeSO nodeToDelete in nodesToDelete)
             {
-                RoomNodeSO nodeToDelete = roomNodesToDelete.Dequeue();
-                
-                _currentRoomNodeGraph.RoomNodeDictionary.Remove(nodeToDelete.id);
-                
-                _currentRoomNodeGraph.roomNodeList.Remove(nodeToDelete);
-                
-                DestroyImmediate(nodeToDelete, true);
-                
-                AssetDatabase.SaveAssets();
+                DeleteSelectedRoomNode(nodeToDelete);
             }
+            
+            AssetDatabase.SaveAssets();
+            GUI.changed = true;
+        }
+
+        private void DeleteSelectedRoomNode(RoomNodeSO roomNode)
+        {
+            // Set isSelected to false (this automatically removes from selectedRoomNodes)
+            roomNode.isSelected = false;
+            
+            _currentRoomNodeGraph.RoomNodeDictionary.Remove(roomNode.id);
+            _currentRoomNodeGraph.roomNodeList.Remove(roomNode);
+            roomNode.RemoveAllNodeConnections();
+            
+            DestroyImmediate(roomNode, true);
         }
         private void DrawRoomNodes()
         {
@@ -425,22 +473,30 @@ namespace NodeGraph.Editor
 
         private void ClearAllSelectedRoomNodes()
         {
-            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            if (_currentRoomNodeGraph.selectedRoomNodes.Count == 0) return;
+            
+            // Create a copy to avoid modification during iteration
+            var nodesToClear = _currentRoomNodeGraph.selectedRoomNodes.ToList();
+            
+            foreach (var node in nodesToClear)
             {
-                if (roomNode.isSelected)
-                {
-                    roomNode.isSelected = false;
-                    GUI.changed = true;
-                }
+                node.isSelected = false; // This automatically removes from list
             }
+            
+            GUI.changed = true;
         }
         
         private void SelectAllRoomNodes()
         {
-            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            if (_currentRoomNodeGraph.roomNodeList.Count == 0) return;
+            
+            ClearAllSelectedRoomNodes();
+            
+            foreach (var node in _currentRoomNodeGraph.roomNodeList)
             {
-                roomNode.isSelected = true;
+                node.isSelected = true; // This automatically adds to list
             }
+    
             GUI.changed = true;
         }
         #endregion Room Node

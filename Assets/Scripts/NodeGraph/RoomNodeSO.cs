@@ -25,7 +25,33 @@ namespace NodeGraph
 
         [HideInInspector] public Rect rect;
         [HideInInspector] public bool isLeftClickDragging;
-        [HideInInspector] public bool isSelected;
+        private bool _isSelected;
+        public bool isSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected == value) return; // No change, skip
+                
+                _isSelected = value;
+                
+                // Update the graph's selected nodes list
+                if (roomNodeGraph)
+                {
+                    if (_isSelected)
+                    {
+                        if (!roomNodeGraph.selectedRoomNodes.Contains(this))
+                        {
+                            roomNodeGraph.selectedRoomNodes.Add(this);
+                        }
+                    }
+                    else
+                    {
+                        roomNodeGraph.selectedRoomNodes.Remove(this);
+                    }
+                }
+            }
+        }
         
         public void Initialize(Rect rect, RoomNodeGraphSO nodeGraph, RoomNodeTypeSO roomNodeType)
         {
@@ -181,19 +207,19 @@ namespace NodeGraph
                 isLeftClickDragging = false;
                 return;
             }
-
+            // Toggle selection
+            isSelected = !isSelected;
+            
             if (isSelected)
             {
-                isSelected = false;
-                Selection.activeObject = null;
-            }
-            else
-            {
-                isSelected = true;
                 if (!Selection.Contains(this))
                 {
                     Selection.activeObject = this;
                 }
+            }
+            else
+            {
+                Selection.activeObject = null;
             }
         }
         
@@ -211,11 +237,16 @@ namespace NodeGraph
         private void ProcessLeftMouseDragEvent(Event currentEvent)
         {
             isLeftClickDragging = true;
+            
+            if (!isSelected)
+            {
+                isSelected = true;
+            }
+            
             if (!Selection.Contains(this))
             {
                 Selection.activeObject = this;
             }
-            isSelected = true;
             
             //.delta captures the mouse movement since the last frame
             DragNode(currentEvent.delta);
