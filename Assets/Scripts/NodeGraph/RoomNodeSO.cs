@@ -315,9 +315,25 @@ namespace NodeGraph
                 Selection.activeObject = this;
             }
             
-            //.delta captures the mouse movement since the last frame
-            DragNode(currentEvent.delta);
+            // Drag all selected nodes together
+            DragSelectedNodes(currentEvent.delta);
+            
+            // //.delta captures the mouse movement since the last frame
+            // DragNode(currentEvent.delta);
             GUI.changed = true;
+        }
+
+        /// <summary>
+        /// Drags all currently selected nodes by the specified delta
+        /// </summary>
+        private void DragSelectedNodes(Vector2 delta)
+        {
+            if (!roomNodeGraph) return;
+            
+            foreach (var node in roomNodeGraph.selectedRoomNodes)
+            {
+                node.DragNode(delta);
+            }
         }
 
         public void DragNode(Vector2 currentEventDelta)
