@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Attributes;
 using UnityEngine;
 
 namespace NodeGraph
@@ -10,7 +11,7 @@ namespace NodeGraph
     {
         [HideInInspector] public RoomNodeTypeListSO roomNodeTypeList;
         [HideInInspector] public List<RoomNodeSO> roomNodeList = new List<RoomNodeSO>();
-        [HideInInspector] public bool hasConnectedBossRoom;
+        [ReadOnly] public bool hasConnectedBossRoom;
         
         // Collection for tracking selected room nodes
         [HideInInspector] public List<RoomNodeSO> selectedRoomNodes = new List<RoomNodeSO>();
