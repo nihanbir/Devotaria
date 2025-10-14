@@ -7,6 +7,17 @@ using UnityEngine;
 
 namespace NodeGraph.Editor
 {
+    /// <summary>
+    /// Represents a custom editor window for managing Room Node Graphs.
+    /// This editor window allows users to create, edit, and manage room node graphs
+    /// for dungeon or level design in Unity.
+    /// </summary>
+    /// <remarks>
+    /// The RoomNodeGraphEditor integrates with Unity's Editor framework
+    /// and provides functionality for handling RoomNodeGraphSO assets.
+    /// It includes features like opening the editor window via the Unity menu
+    /// or upon double-clicking a RoomNodeGraph asset in the Unity Inspector.
+    /// </remarks>
     public class RoomNodeGraphEditor : EditorWindow
     {
         #region Variables
@@ -89,7 +100,7 @@ namespace NodeGraph.Editor
                 border = new RectOffset(NodeBorder, NodeBorder, NodeBorder, NodeBorder)
             };
             
-            //Load room node type list
+            //Load the room node type list
             _roomNodeTypeList = GameResources.Instance.roomNodeTypeList;
         }
 
@@ -112,7 +123,7 @@ namespace NodeGraph.Editor
         /// </summary>
         private void OnGUI()
         {
-            //If a SO of type RoomNodeGraphSO has been selected then process
+            //If a SO of type RoomNodeGraphSO has been selected, then process
             if (_currentRoomNodeGraph)
             {
                 DrawBackgroundGrid(GridSmall, 0.2f, Color.gray);
@@ -154,7 +165,7 @@ namespace NodeGraph.Editor
            // I need to learn this better, so I tried to take notes on it.
             for (int i = 0; i < verticalLineCount; i++)
             {
-                Handles.DrawLine(new Vector3(gridSize * i,  // For each index in our iteration, we multiply that by the grid size to get our position on the x axis.
+                Handles.DrawLine(new Vector3(gridSize * i,  // For each index in our iteration, we multiply that by the grid size to get our position on the x-axis.
                                              -gridSize, // And then on the y-axis, we start drawing from minus grid size. This is where we've got our overlap, so we want to start drawing outside the screen slightly.
                                              0) 
                                              + gridOffset, // And then we add in the grid offsets. So this is how much we're offset in the drawing of the line.
@@ -176,6 +187,11 @@ namespace NodeGraph.Editor
         #endregion Graph Editor SO Asset
         
         #region Event Processors
+
+        /// <summary>
+        /// Handles input events for the room node graph editor window, including key presses, mouse interactions,
+        /// and determining the active room node or graph-level actions.
+        /// </summary>
         private void ProcessEvents(Event currentEvent)
         {
             
@@ -190,7 +206,7 @@ namespace NodeGraph.Editor
             }
             
             // If the node is null
-            // or if the mouse is not currently dragging the node 
+            // or if the mouse is not currently dragging the node, 
             // then set the current room node
             if (!_currentRoomNode || !_currentRoomNode.isLeftClickDragging)
             {
@@ -198,11 +214,11 @@ namespace NodeGraph.Editor
             }
             
             // If the current room node is null,
-            // or we are currently dragging a line from the room node
+            // or we are currently dragging a line from the room node,
             // then process the room node graph events
             if (!_currentRoomNode || _currentRoomNodeGraph.roomNodeToDrawLineFrom)
             {
-                ProcessRoomNodeGraphEvents(currentEvent);
+                ProcessRoomNodeGraphMouseEvents(currentEvent);
             }
             // Else process the room node events
             else
@@ -211,7 +227,11 @@ namespace NodeGraph.Editor
             }
         }
 
-        private void ProcessRoomNodeGraphEvents(Event currentEvent)
+        /// <summary>
+        /// Processes mouse events for the room node graph editor, such as mouse down, mouse up, and mouse drag.
+        /// This method helps manage interactions performed within the graph editor, like selecting and moving nodes.
+        /// </summary>
+        private void ProcessRoomNodeGraphMouseEvents(Event currentEvent)
         {
             switch (currentEvent.type)
             {
@@ -227,15 +247,11 @@ namespace NodeGraph.Editor
                     ProcessMouseDragEvent(currentEvent);
                     break;
                 
-                // case EventType.KeyDown:
-                //     ProcessKeyDownEvent(currentEvent);
-                //     break;
-                
             }
         }
 
         /// <summary>
-        /// Process mouse down events on the room node graph (not over a node)
+        /// Process mouses down events on the room node graph (not over a node)
         /// </summary>
         private void ProcessMouseDownEvent(Event currentEvent)
         {
@@ -310,9 +326,9 @@ namespace NodeGraph.Editor
         {
             _graphDrag = dragDelta;
 
-            for (int i = 0; i < _currentRoomNodeGraph.roomNodeList.Count; i++)
+            foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
             {
-                _currentRoomNodeGraph.roomNodeList[i].DragNode(dragDelta);
+                roomNode.DragNode(dragDelta);
             }
             
             GUI.changed = true;
@@ -327,6 +343,11 @@ namespace NodeGraph.Editor
             }
         }
 
+        /// <summary>
+        /// Displays a context menu at the specified mouse position.
+        /// The context menu provides options for actions such as adding room nodes,
+        /// selecting all room nodes, and deleting selected room node links.
+        /// </summary>
         private void ShowContextMenu(Vector2 mousePosition)
         {
             GenericMenu contextMenu = new GenericMenu();
@@ -343,6 +364,7 @@ namespace NodeGraph.Editor
         #endregion Event Processors
         
         #region Room Node
+        
         /// <summary>
         /// Add a new room node at the mouse position with the default room node type
         /// </summary>
@@ -377,34 +399,40 @@ namespace NodeGraph.Editor
             _currentRoomNodeGraph.OnValidate();
         }
 
+        /// <summary>
+        /// Deletes the links between the selected room nodes and their child nodes.
+        /// If a connection to a boss room node is removed, the graph's boss room connection flag is updated accordingly.
+        /// </summary>
         private void DeleteSelectedRoomNodeLinks()
         {
-            // Itarate through all selected room nodes
-            foreach (RoomNodeSO roomNode in _currentRoomNodeGraph.roomNodeList)
+            // Iterate through all selected room nodes
+            foreach (var roomNode in _currentRoomNodeGraph.roomNodeList.Where(roomNode => roomNode.isSelected && roomNode.childRoomNodeIDList.Count > 0))
             {
-                // If the room node is selected
-                if (roomNode.isSelected && roomNode.childRoomNodeIDList.Count > 0)
+                for (int i = roomNode.childRoomNodeIDList.Count - 1; i >= 0 ; i--)
                 {
-                    for (int i = roomNode.childRoomNodeIDList.Count - 1; i >= 0 ; i--)
-                    {
-                        RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(roomNode.childRoomNodeIDList[i]);
+                    RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(roomNode.childRoomNodeIDList[i]);
 
-                        if (!childNode && !childNode.isSelected) continue;
+                    if (!childNode && !childNode.isSelected) continue;
                         
-                        // If the child node is a boss room, remove the connection to the boss room
-                        if (childNode.roomNodeType.isBossRoom || roomNode.roomNodeType.isBossRoom)
-                        {
-                            _currentRoomNodeGraph.hasConnectedBossRoom = false;
-                        }
-                        
-                        // Remove the connection between the room nodes
-                        roomNode.RemoveChildRoomNodeConnection(childNode.id);
+                    // If the child node is a boss room, remove the connection to the boss room
+                    if (childNode.roomNodeType.isBossRoom || roomNode.roomNodeType.isBossRoom)
+                    {
+                        _currentRoomNodeGraph.hasConnectedBossRoom = false;
                     }
+                        
+                    // Remove the connection between the room nodes
+                    roomNode.RemoveChildRoomNodeConnection(childNode.id);
                 }
             }
+
             ClearAllSelectedRoomNodes();
         }
-        
+
+        /// <summary>
+        /// Deletes the currently selected room nodes from the room node graph, excluding entrance nodes.
+        /// Ensures that references to boss room nodes are properly updated during deletion.
+        /// This method modifies the state of the room node graph and refreshes the editor.
+        /// </summary>
         private void DeleteSelectedRoomNodes()
         {
             // Use the graph's selected nodes list
@@ -425,7 +453,7 @@ namespace NodeGraph.Editor
                 _currentRoomNodeGraph.hasConnectedBossRoom = false;
             }
     
-            // Process all deletions
+            // Process-all deletions
             foreach (RoomNodeSO nodeToDelete in nodesToDelete)
             {
                 DeleteSelectedRoomNode(nodeToDelete);
@@ -435,6 +463,9 @@ namespace NodeGraph.Editor
             GUI.changed = true;
         }
 
+        /// <summary>
+        /// Deletes the specified room node from the Room Node Graph.
+        /// </summary>
         private void DeleteSelectedRoomNode(RoomNodeSO roomNode)
         {
             // Set isSelected to false (this automatically removes from selectedRoomNodes)
@@ -446,6 +477,14 @@ namespace NodeGraph.Editor
             
             DestroyImmediate(roomNode, true);
         }
+
+        /// <summary>
+        /// Renders all room nodes in the current Room Node Graph using the assigned node styles.
+        /// </summary>
+        /// <remarks>
+        /// Iterates through the list of room nodes in the selected RoomNodeGraphSO and
+        /// draws each one with a unique style depending on its selection state.
+        /// </remarks>
         private void DrawRoomNodes()
         {
             foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
@@ -471,6 +510,14 @@ namespace NodeGraph.Editor
             return null;
         }
 
+        /// <summary>
+        /// Clears the selection state of all currently selected room nodes in the room node graph.
+        /// </summary>
+        /// <remarks>
+        /// This method iterates through the list of currently selected room nodes, resets their selected state,
+        /// and ensures the graphical user interface is updated to reflect these changes. If no nodes are selected,
+        /// the method returns immediately without making any modifications.
+        /// </remarks>
         private void ClearAllSelectedRoomNodes()
         {
             if (_currentRoomNodeGraph.selectedRoomNodes.Count == 0) return;
@@ -480,12 +527,21 @@ namespace NodeGraph.Editor
             
             foreach (var node in nodesToClear)
             {
-                node.isSelected = false; // This automatically removes from list
+                node.isSelected = false; // This automatically removes from a list
             }
             
             GUI.changed = true;
         }
-        
+
+        /// <summary>
+        /// Selects all room nodes in the current Room Node Graph and marks them as selected.
+        /// </summary>
+        /// <remarks>
+        /// This method clears any previously selected room nodes before selecting all nodes in the graph.
+        /// It iterates through the list of room nodes available in the current Room Node Graph and sets
+        /// each node's 'isSelected' property to true. This ensures that all nodes are added to the selection.
+        /// Additionally, it triggers a GUI update to reflect the selection changes within the editor.
+        /// </remarks>
         private void SelectAllRoomNodes()
         {
             if (_currentRoomNodeGraph.roomNodeList.Count == 0) return;
@@ -494,7 +550,7 @@ namespace NodeGraph.Editor
             
             foreach (var node in _currentRoomNodeGraph.roomNodeList)
             {
-                node.isSelected = true; // This automatically adds to list
+                node.isSelected = true; // This automatically adds to the list
             }
     
             GUI.changed = true;
@@ -502,30 +558,36 @@ namespace NodeGraph.Editor
         #endregion Room Node
         
         #region Room Connection Line
+
+        /// <summary>
+        /// Draws visual connection lines between parent room nodes and their child room nodes
+        /// in the currently selected RoomNodeGraph. Each connection is represented as a line
+        /// to visually demonstrate the hierarchy and relationships between nodes.
+        /// </summary>
+        /// <remarks>
+        /// This method iterates through the list of room nodes in the RoomNodeGraphSO and
+        /// checks for relationships between parent and child nodes. If valid relationships
+        /// are found, it draws lines connecting the nodes. Changes occur only when connections
+        /// exist and are successfully rendered.
+        /// </remarks>
         private void DrawRoomConnections()
         {
             // loop through all room nodes
             foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
             {
-                if (roomNode.childRoomNodeIDList.Count > 0)
+                if (roomNode.childRoomNodeIDList.Count <= 0) continue;
+                // loop through all child room nodes
+                foreach (var childID in roomNode.childRoomNodeIDList.Where(childID => _currentRoomNodeGraph.RoomNodeDictionary.ContainsKey(childID)))
                 {
-                    // loop through all child room nodes
-                    foreach (var childID in roomNode.childRoomNodeIDList)
-                    {
-                        // get child room node from dictionary
-                        if (_currentRoomNodeGraph.RoomNodeDictionary.ContainsKey(childID))
-                        {
-                            DrawConnectionLine(roomNode, _currentRoomNodeGraph.RoomNodeDictionary[childID]);
-                            GUI.changed = true;
-                        }
-                    }
+                    DrawConnectionLine(roomNode, _currentRoomNodeGraph.RoomNodeDictionary[childID]);
+                    GUI.changed = true;
                 }
-               
+
             }
         }
 
         /// <summary>
-        /// Draw connection line between the parent node and child node
+        /// Draw a connection line between the parent node and child node
         /// </summary>
         private void DrawConnectionLine(RoomNodeSO parentRoomNode, RoomNodeSO childRoomNode)
         {
@@ -553,12 +615,15 @@ namespace NodeGraph.Editor
             Handles.DrawBezier(arrowHeadPoint, arrowTailPoint1, arrowHeadPoint, arrowTailPoint1, Color.white, null, ConnectingLineWidth);
             Handles.DrawBezier(arrowHeadPoint, arrowTailPoint2, arrowHeadPoint, arrowTailPoint2, Color.white, null, ConnectingLineWidth);
             
-            // Draw line between the two nodes
+            // Draw a line between the two nodes
             Handles.DrawBezier(start, end, start, end, Color.white, null, ConnectingLineWidth);
             
             GUI.changed = true;
         }
 
+        /// <summary>
+        /// Draws a bezier line representing a connection being dragged from a room node to the current mouse position, if applicable.
+        /// </summary>
         private void DrawDraggedLine()
         {
             if (_currentRoomNodeGraph.linePosition != Vector2.zero)
@@ -589,9 +654,6 @@ namespace NodeGraph.Editor
             _currentRoomNodeGraph.linePosition += currentEventDelta;
         }
         #endregion Room Connection Line
-
-        
-        
         
     }
 }
