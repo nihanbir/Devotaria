@@ -13,7 +13,7 @@ namespace NodeGraph
         [HideInInspector] public bool hasConnectedBossRoom;
         
         // Collection for tracking selected room nodes
-        public List<RoomNodeSO> selectedRoomNodes = new List<RoomNodeSO>();
+        [HideInInspector] public List<RoomNodeSO> selectedRoomNodes = new List<RoomNodeSO>();
 
         //Create a dictionary to store the room nodes by unique GUID
         public readonly Dictionary<string, RoomNodeSO> RoomNodeDictionary = new Dictionary<string, RoomNodeSO>();
