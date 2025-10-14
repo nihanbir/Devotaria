@@ -318,8 +318,10 @@ namespace NodeGraph
         {
             isLeftClickDragging = true;
             
+            // If this node is not selected, clear other selections and select only this one
             if (!IsSelected)
             {
+                ClearOtherSelections();
                 IsSelected = true;
             }
             
