@@ -193,23 +193,90 @@ namespace NodeGraph
         {
             if (currentEvent.button == 0)
             {
-                ProcessLeftClickUpEvent();
+                ProcessLeftClickUpEvent(currentEvent);
             }
         }
         
         /// <summary>
         /// Expand this function for left click up events
         /// </summary>
-        private void ProcessLeftClickUpEvent()
+        private void ProcessLeftClickUpEvent(Event currentEvent)
         {
             if (isLeftClickDragging)
             {
                 isLeftClickDragging = false;
                 return;
             }
-            // Toggle selection
-            isSelected = !isSelected;
             
+            // Check if Shift is held down
+            if (currentEvent.shift)
+            {
+                HandleMultiSelect();
+            }
+            else
+            {
+                HandleSingleSelect(); 
+            }
+    
+            UpdateUnitySelection();
+        }
+
+        /// <summary>
+        /// Handles multi-selection mode (Shift + Click) - toggles this node's selection
+        /// </summary>
+        private void HandleMultiSelect()
+        {
+            isSelected = !isSelected;
+        }
+        
+        /// <summary>
+        /// Handles single selection mode (Click) - selects only this node
+        /// </summary>
+        private void HandleSingleSelect()
+        {
+            // If no nodes are selected, just select this one
+            if (roomNodeGraph.selectedRoomNodes.Count == 0)
+            {
+                isSelected = true;
+                return;
+            }
+            // Single select mode: check if this is already the only selected node
+            if (isSelected && roomNodeGraph.selectedRoomNodes.Count == 1)
+            {
+                // Already the only selected node, do nothing
+                return;
+            }
+                
+            // Clear all others
+            ClearOtherSelections();
+           
+            // Select this node (only if not already selected)
+            if (!isSelected)
+            {
+                isSelected = true;
+            }
+        }
+        
+        /// <summary>
+        /// Clears all selected nodes except this one
+        /// </summary>
+        private void ClearOtherSelections()
+        {
+            if (!roomNodeGraph) return;
+    
+            // Clear all other selected nodes except this one
+            var nodesToClear = roomNodeGraph.selectedRoomNodes.ToList();
+            foreach (var node in nodesToClear.Where(node => node != this))
+            {
+                node.isSelected = false;
+            }
+        }
+        
+        /// <summary>
+        /// Updates Unity's Selection.activeObject to match this node's selection state
+        /// </summary>
+        private void UpdateUnitySelection()
+        {
             if (isSelected)
             {
                 if (!Selection.Contains(this))

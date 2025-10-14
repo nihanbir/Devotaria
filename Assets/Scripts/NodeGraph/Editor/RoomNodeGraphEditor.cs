@@ -272,19 +272,8 @@ namespace NodeGraph.Editor
             switch (currentEvent.button)
             {
                 case 0:
-                    if (hoveredRoomNode)
-                    {
-                        _selectedRoomNode = hoveredRoomNode;
-                        if (!_currentRoomNodeGraph.selectedRoomNodes.Contains(_selectedRoomNode))
-                        {
-                            _currentRoomNodeGraph.selectedRoomNodes.Add(_selectedRoomNode);
-                        }
-                        hoveredRoomNode.isSelected = true;
-                    }
-                    else
-                    {
-                        ClearAllSelectedRoomNodes();
-                    }
+                    // Only handles clicking on empty space
+                    ClearAllSelectedRoomNodes();
                     break;
                 case 1:
                     if (_currentRoomNodeGraph.roomNodeToDrawLineFrom)
