@@ -2,8 +2,6 @@ using Attributes;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor
-{
     [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
     public class ReadOnlyDrawer : PropertyDrawer
     {
@@ -31,4 +29,3 @@ namespace Editor
             return EditorGUI.GetPropertyHeight(property, label, true);
         }
     }
-}
