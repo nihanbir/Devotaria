@@ -395,13 +395,13 @@ namespace NodeGraph.Editor
         private void DeleteSelectedRoomNodeLinks()
         {
             // Iterate through all selected room nodes
-            foreach (var roomNode in _currentRoomNodeGraph.roomNodeList.Where(roomNode => roomNode.isSelected && roomNode.childRoomNodeIDList.Count > 0))
+            foreach (var roomNode in _currentRoomNodeGraph.roomNodeList.Where(roomNode => roomNode.IsSelected && roomNode.childRoomNodeIDList.Count > 0))
             {
                 for (int i = roomNode.childRoomNodeIDList.Count - 1; i >= 0 ; i--)
                 {
                     RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(roomNode.childRoomNodeIDList[i]);
 
-                    if (!childNode && !childNode.isSelected) continue;
+                    if (!childNode && !childNode.IsSelected) continue;
                         
                     // If the child node is a boss room, remove the connection to the boss room
                     if (childNode.roomNodeType.isBossRoom || roomNode.roomNodeType.isBossRoom)
@@ -458,7 +458,7 @@ namespace NodeGraph.Editor
         private void DeleteSelectedRoomNode(RoomNodeSO roomNode)
         {
             // Set isSelected to false (this automatically removes from selectedRoomNodes)
-            roomNode.isSelected = false;
+            roomNode.IsSelected = false;
             
             _currentRoomNodeGraph.RoomNodeDictionary.Remove(roomNode.id);
             _currentRoomNodeGraph.roomNodeList.Remove(roomNode);
@@ -478,7 +478,7 @@ namespace NodeGraph.Editor
         {
             foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
             {
-                roomNode.Draw(roomNode.isSelected ? _roomNodeSelectedStyle : _roomNodeStyle);
+                roomNode.Draw(roomNode.IsSelected ? _roomNodeSelectedStyle : _roomNodeStyle);
             }
 
             GUI.changed = true;
@@ -516,7 +516,7 @@ namespace NodeGraph.Editor
             
             foreach (var node in nodesToClear)
             {
-                node.isSelected = false; // This automatically removes from a list
+                node.IsSelected = false; // This automatically removes from a list
             }
             
             GUI.changed = true;
@@ -539,7 +539,7 @@ namespace NodeGraph.Editor
             
             foreach (var node in _currentRoomNodeGraph.roomNodeList)
             {
-                node.isSelected = true; // This automatically adds to the list
+                node.IsSelected = true; // This automatically adds to the list
             }
     
             GUI.changed = true;

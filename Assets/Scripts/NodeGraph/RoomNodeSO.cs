@@ -26,7 +26,7 @@ namespace NodeGraph
         [HideInInspector] public Rect rect;
         [HideInInspector] public bool isLeftClickDragging;
         private bool _isSelected;
-        public bool isSelected
+        public bool IsSelected
         {
             get => _isSelected;
             set
@@ -61,22 +61,22 @@ namespace NodeGraph
             roomNodeGraph = nodeGraph;
             this.roomNodeType = roomNodeType;
             
-            //Load room node type list
+            //Load the room node type list
             roomNodeTypeList = GameResources.Instance.roomNodeTypeList;
         }
         
         /// <summary>
-        /// Draw node with the nodestyle
+        /// Draw a node with the node style
         /// </summary>
         public void Draw(GUIStyle nodeStyle)
         {
-            // Draw node box
+            // Draw the node box
             GUILayout.BeginArea(rect, nodeStyle);
             
             // Start region to detect popup selection changes
             EditorGUI.BeginChangeCheck();
             
-            // If the room node has a parent or is of type entrance then display a label else display a popup
+            // If the room node has a parent or is of type entrance, then display a label else display a popup
             if (parentRoomNodeIDList.Count > 0 || roomNodeType.isEntrance)
             {
                 // Display a label that can't be changed
@@ -136,7 +136,7 @@ namespace NodeGraph
         /// <summary>
         /// Populate a string array with the room node types to display in the popup
         /// </summary>
-        public string[] GetRoomNodeTypesToDisplay()
+        private string[] GetRoomNodeTypesToDisplay()
         {
             string[] roomArray = new string[roomNodeTypeList.list.Count];
 
@@ -182,7 +182,7 @@ namespace NodeGraph
         }
         
         /// <summary>
-        /// Expand this function for right click down events
+        /// Expand this function for right-click down events
         /// </summary>
         private void ProcessRightClickDownEvent(Event currentEvent)
         {
@@ -226,7 +226,7 @@ namespace NodeGraph
         /// </summary>
         private void HandleMultiSelect()
         {
-            isSelected = !isSelected;
+            IsSelected = !IsSelected;
         }
         
         /// <summary>
@@ -237,11 +237,11 @@ namespace NodeGraph
             // If no nodes are selected, just select this one
             if (roomNodeGraph.selectedRoomNodes.Count == 0)
             {
-                isSelected = true;
+                IsSelected = true;
                 return;
             }
             // Single select mode: check if this is already the only selected node
-            if (isSelected && roomNodeGraph.selectedRoomNodes.Count == 1)
+            if (IsSelected && roomNodeGraph.selectedRoomNodes.Count == 1)
             {
                 // Already the only selected node, do nothing
                 return;
@@ -251,9 +251,9 @@ namespace NodeGraph
             ClearOtherSelections();
            
             // Select this node (only if not already selected)
-            if (!isSelected)
+            if (!IsSelected)
             {
-                isSelected = true;
+                IsSelected = true;
             }
         }
         
@@ -268,7 +268,7 @@ namespace NodeGraph
             var nodesToClear = roomNodeGraph.selectedRoomNodes.ToList();
             foreach (var node in nodesToClear.Where(node => node != this))
             {
-                node.isSelected = false;
+                node.IsSelected = false;
             }
         }
         
@@ -277,7 +277,7 @@ namespace NodeGraph
         /// </summary>
         private void UpdateUnitySelection()
         {
-            if (isSelected)
+            if (IsSelected)
             {
                 if (!Selection.Contains(this))
                 {
@@ -305,9 +305,9 @@ namespace NodeGraph
         {
             isLeftClickDragging = true;
             
-            if (!isSelected)
+            if (!IsSelected)
             {
-                isSelected = true;
+                IsSelected = true;
             }
             
             if (!Selection.Contains(this))
@@ -318,7 +318,7 @@ namespace NodeGraph
             // Drag all selected nodes together
             DragSelectedNodes(currentEvent.delta);
             
-            // //.delta captures the mouse movement since the last frame
+            // //.delta have captured the mouse movement since the last frame
             // DragNode(currentEvent.delta);
             GUI.changed = true;
         }
@@ -488,7 +488,7 @@ namespace NodeGraph
             if (thisIsCorridor && childRoomNodeIDList.Count > 0)
                 return false;
 
-            // If adding a corridor to a room, check max corridor limit
+            // If adding a corridor to a room, check the max corridor limit
             if (childIsCorridor && childRoomNodeIDList.Count >= Settings.maxChildCorridors)
                 return false;
 
