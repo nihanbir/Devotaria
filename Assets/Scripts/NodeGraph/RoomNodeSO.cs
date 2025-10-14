@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Attributes;
 using GameManager;
 using Misc;
 using UnityEditor;
@@ -15,7 +16,7 @@ namespace NodeGraph
         [HideInInspector] public List<string> parentRoomNodeIDList = new List<string>();
         [HideInInspector] public List<string> childRoomNodeIDList = new List<string>();
         [HideInInspector] public RoomNodeGraphSO roomNodeGraph;
-        public RoomNodeTypeSO roomNodeType;
+        [ReadOnly] public RoomNodeTypeSO roomNodeType;
         [HideInInspector] public RoomNodeTypeListSO roomNodeTypeList;
         
         #endregion Variables
