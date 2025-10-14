@@ -61,6 +61,12 @@ namespace NodeGraph
             roomNodeGraph = nodeGraph;
             this.roomNodeType = roomNodeType;
             
+            // Set the name based on room node type
+            if (roomNodeType)
+            {
+                name = roomNodeType.roomNodeTypeName;
+            }
+            
             //Load the room node type list
             roomNodeTypeList = GameResources.Instance.roomNodeTypeList;
         }
@@ -95,6 +101,13 @@ namespace NodeGraph
                 int selection = EditorGUILayout.Popup(selected, GetRoomNodeTypesToDisplay());
                 
                 roomNodeType = roomNodeTypeList.list[selection];
+                
+                // Update ScriptableObject name when room node type changes
+                if (selected != selection && roomNodeType)
+                {
+                    name = roomNodeType.roomNodeTypeName;
+                    AssetDatabase.SaveAssets();
+                }
 
                 // If the room node type has changed, check if the room node can be connected to the current room node
                 if (roomNodeTypeList.list[selected].isCorridor && !roomNodeTypeList.list[selection].isCorridor
