@@ -440,9 +440,9 @@ namespace NodeGraph.Editor
             // Set isSelected to false (this automatically removes from selectedRoomNodes)
             roomNode.IsSelected = false;
             
+            roomNode.RemoveAllNodeConnections();
             _currentRoomNodeGraph.RoomNodeDictionary.Remove(roomNode.id);
             _currentRoomNodeGraph.roomNodeList.Remove(roomNode);
-            roomNode.RemoveAllNodeConnections();
             
             DestroyImmediate(roomNode, true);
         }
