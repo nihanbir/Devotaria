@@ -400,35 +400,6 @@ namespace NodeGraph.Editor
         }
 
         /// <summary>
-        /// Deletes the links between the selected room nodes and their child nodes.
-        /// If a connection to a boss room node is removed, the graph's boss room connection flag is updated accordingly.
-        /// </summary>
-        private void DeleteSelectedRoomNodeLinks()
-        {
-            // Iterate through all selected room nodes
-            foreach (var roomNode in _currentRoomNodeGraph.roomNodeList.Where(roomNode => roomNode.IsSelected && roomNode.childRoomNodeIDList.Count > 0))
-            {
-                for (int i = roomNode.childRoomNodeIDList.Count - 1; i >= 0 ; i--)
-                {
-                    RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(roomNode.childRoomNodeIDList[i]);
-
-                    if (!childNode && !childNode.IsSelected) continue;
-                        
-                    // If the child node is a boss room, remove the connection to the boss room
-                    if (childNode.roomNodeType.isBossRoom || roomNode.roomNodeType.isBossRoom)
-                    {
-                        _currentRoomNodeGraph.hasConnectedBossRoom = false;
-                    }
-                        
-                    // Remove the connection between the room nodes
-                    roomNode.RemoveChildRoomNodeConnection(childNode.id);
-                }
-            }
-
-            ClearAllSelectedRoomNodes();
-        }
-
-        /// <summary>
         /// Deletes the currently selected room nodes from the room node graph, excluding entrance nodes.
         /// Ensures that references to boss room nodes are properly updated during deletion.
         /// This method modifies the state of the room node graph and refreshes the editor.
@@ -446,13 +417,6 @@ namespace NodeGraph.Editor
             // Early return if nothing to delete
             if (nodesToDelete.Count == 0) return;
     
-            // Check for boss rooms
-            bool hasBossRoom = nodesToDelete.Any(node => node.roomNodeType.isBossRoom);
-            if (hasBossRoom)
-            {
-                _currentRoomNodeGraph.hasConnectedBossRoom = false;
-            }
-    
             // Process-all deletions
             foreach (RoomNodeSO nodeToDelete in nodesToDelete)
             {
@@ -468,6 +432,11 @@ namespace NodeGraph.Editor
         /// </summary>
         private void DeleteSelectedRoomNode(RoomNodeSO roomNode)
         {
+            // Check if we're removing a boss room connection
+            if (roomNode.roomNodeType.isBossRoom)
+            {
+                _currentRoomNodeGraph.hasConnectedBossRoom = false;
+            }
             // Set isSelected to false (this automatically removes from selectedRoomNodes)
             roomNode.IsSelected = false;
             
