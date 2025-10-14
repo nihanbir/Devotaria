@@ -9,10 +9,21 @@ namespace Editor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            bool wasEnabled = GUI.enabled;
+            // Save the original label width
+            float originalLabelWidth = EditorGUIUtility.labelWidth;
+        
+            // For boolean properties, reduce the label width to prevent overlap
+            if (property.propertyType == SerializedPropertyType.Boolean)
+            {
+                EditorGUIUtility.labelWidth = position.width - 20; // Leave space for checkbox
+            }
+        
             GUI.enabled = false;
             EditorGUI.PropertyField(position, property, label, true);
-            GUI.enabled = wasEnabled;
+            GUI.enabled = true;
+        
+            // Restore the original label width
+            EditorGUIUtility.labelWidth = originalLabelWidth;
         }
     
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
