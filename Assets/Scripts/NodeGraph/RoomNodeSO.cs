@@ -12,9 +12,9 @@ namespace NodeGraph
     public class RoomNodeSO : ScriptableObject
     {
         #region Variables
-        [HideInInspector] public string id;
-        [HideInInspector] public List<string> parentRoomNodeIDList = new List<string>();
-        [HideInInspector] public List<string> childRoomNodeIDList = new List<string>();
+        [ReadOnly] public string id;
+        [ReadOnly] public List<string> parentRoomNodeIDList = new List<string>();
+        [ReadOnly] public List<string> childRoomNodeIDList = new List<string>();
         [HideInInspector] public RoomNodeGraphSO roomNodeGraph;
         [ReadOnly] public RoomNodeTypeSO roomNodeType;
         [HideInInspector] public RoomNodeTypeListSO roomNodeTypeList;
