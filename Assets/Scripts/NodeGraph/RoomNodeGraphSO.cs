@@ -44,6 +44,9 @@ namespace NodeGraph
 #if UNITY_EDITOR
         [HideInInspector] public RoomNodeSO roomNodeToDrawLineFrom;
         [HideInInspector] public Vector2 linePosition;
+        
+        // Track selected connection lines
+        [HideInInspector] public List<(string parentId, string childId)> selectedConnections = new List<(string, string)>();
 
         // Repopulate the dictionary when the SO is edited in the editor
         public void OnValidate()

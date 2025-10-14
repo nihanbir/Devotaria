@@ -43,6 +43,7 @@ namespace NodeGraph
                         if (!roomNodeGraph.selectedRoomNodes.Contains(this))
                         {
                             roomNodeGraph.selectedRoomNodes.Add(this);
+                            roomNodeGraph.selectedConnections.Clear();
                         }
                     }
                     else

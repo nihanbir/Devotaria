@@ -43,6 +43,9 @@ namespace NodeGraph.Editor
         private const float ConnectingLineWidth = 3f;
         private const float ConnectingLineArrowSize = 6f;
         
+        // Connection line selection
+        private const float ConnectionLineSelectionThreshold = 10f; // Distance threshold for selecting a line
+        
         //Grid Spacing
         private const float GridLarge = 100f;
         private const float GridSmall = 25f;
@@ -259,7 +262,6 @@ namespace NodeGraph.Editor
             {
                 case 0:
                     ClearLineDrag();
-                    ClearAllSelectedRoomNodes();
                     break;
                 case 1:
                     ShowContextMenu(currentEvent.mousePosition);
@@ -272,8 +274,13 @@ namespace NodeGraph.Editor
             switch (currentEvent.button)
             {
                 case 0:
-                    // Only handles clicking on empty space
-                    ClearAllSelectedRoomNodes();
+                    // Check if we clicked on a connection line
+                    if (!TrySelectConnectionLine(currentEvent.mousePosition))
+                    {
+                        // If we didn't click on a line, clear selections
+                        ClearAllSelectedRoomNodes();
+                        ClearSelectedConnections();
+                    }
                     break;
                 case 1:
                     if (_currentRoomNodeGraph.roomNodeToDrawLineFrom)
@@ -327,7 +334,15 @@ namespace NodeGraph.Editor
         {
             if (currentEvent.keyCode == KeyCode.Delete)
             {
-                DeleteSelectedRoomNodes();
+                // Delete selected connections first, then selected nodes
+                if (_currentRoomNodeGraph.selectedConnections.Count > 0)
+                {
+                    DeleteSelectedConnections();
+                }
+                else
+                {
+                    DeleteSelectedRoomNodes();
+                }
                 // currentEvent.Use();
             }
         }
@@ -343,10 +358,6 @@ namespace NodeGraph.Editor
             contextMenu.AddItem(new GUIContent("Add Room Node"), false, () => AddRoomNode(mousePosition));
             contextMenu.AddSeparator("");
             contextMenu.AddItem(new GUIContent("Select All Room Nodes"), false, SelectAllRoomNodes);
-            
-            //TODO: Change this to buttons instead of menu items
-            contextMenu.AddSeparator("");
-            contextMenu.AddItem(new GUIContent("Delete Selected Room Node Links"), false, DeleteSelectedRoomNodeLinks);
             
             contextMenu.ShowAsContext();
         }
@@ -600,13 +611,18 @@ namespace NodeGraph.Editor
             // Calculate the arrow head point
             Vector2 arrowHeadPoint = mid + direction * ConnectingLineArrowSize;
             
+            // Check if this connection is selected
+            bool isSelected = _currentRoomNodeGraph.selectedConnections.Contains((parentRoomNode.id, childRoomNode.id));
+            Color lineColor = isSelected ? Color.yellow : Color.white;
+            float lineWidth = isSelected ? ConnectingLineWidth * 1.5f : ConnectingLineWidth;
+            
             // Draw the lines from the arrow head to the arrow tail
-            Handles.DrawBezier(arrowHeadPoint, arrowTailPoint1, arrowHeadPoint, arrowTailPoint1, Color.white, null, ConnectingLineWidth);
-            Handles.DrawBezier(arrowHeadPoint, arrowTailPoint2, arrowHeadPoint, arrowTailPoint2, Color.white, null, ConnectingLineWidth);
+            Handles.DrawBezier(arrowHeadPoint, arrowTailPoint1, arrowHeadPoint, arrowTailPoint1, lineColor, null, lineWidth);
+            Handles.DrawBezier(arrowHeadPoint, arrowTailPoint2, arrowHeadPoint, arrowTailPoint2, lineColor, null, lineWidth);
             
             // Draw a line between the two nodes
-            Handles.DrawBezier(start, end, start, end, Color.white, null, ConnectingLineWidth);
-            
+            Handles.DrawBezier(start, end, start, end, lineColor, null, lineWidth);
+
             GUI.changed = true;
         }
 
@@ -642,6 +658,109 @@ namespace NodeGraph.Editor
         {
             _currentRoomNodeGraph.linePosition += currentEventDelta;
         }
+        
+        // <summary>
+        /// Tries to select a connection line at the given mouse position.
+        /// Returns true if a line was selected, false otherwise.
+        /// </summary>
+        private bool TrySelectConnectionLine(Vector2 mousePosition)
+        {
+            foreach (var roomNode in _currentRoomNodeGraph.roomNodeList)
+            {
+                if (roomNode.childRoomNodeIDList.Count <= 0) continue;
+                
+                foreach (var childID in roomNode.childRoomNodeIDList)
+                {
+                    if (!_currentRoomNodeGraph.RoomNodeDictionary.ContainsKey(childID)) continue;
+                    
+                    RoomNodeSO childNode = _currentRoomNodeGraph.RoomNodeDictionary[childID];
+                    Vector2 startPos = roomNode.rect.center;
+                    Vector2 endPos = childNode.rect.center;
+                    
+                    float distance = GetDistanceFromPointToLineSegment(mousePosition, startPos, endPos);
+                    
+                    if (distance <= ConnectionLineSelectionThreshold)
+                    {
+                        // Clear previous selections
+                        ClearAllSelectedRoomNodes();
+                        
+                        // Clear previous connection selections
+                        ClearSelectedConnections();
+                        
+                        // Select this connection
+                        _currentRoomNodeGraph.selectedConnections.Add((roomNode.id, childID));
+                        GUI.changed = true;
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        /// <summary>
+        /// Calculates the distance from a point to a line segment
+        /// </summary>
+        private float GetDistanceFromPointToLineSegment(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
+        {
+            Vector2 lineDir = lineEnd - lineStart;
+            float lineLength = lineDir.magnitude;
+            
+            if (lineLength < 0.001f) // Line is essentially a point
+                return Vector2.Distance(point, lineStart);
+            
+            lineDir.Normalize();
+            
+            Vector2 pointToStart = point - lineStart;
+            float projection = Vector2.Dot(pointToStart, lineDir);
+            
+            // Clamp projection to line segment bounds
+            projection = Mathf.Clamp(projection, 0, lineLength);
+            Vector2 closestPoint = lineStart + lineDir * projection;
+            
+            return Vector2.Distance(point, closestPoint);
+        }
+        
+        /// <summary>
+        /// Clears all selected connection lines
+        /// </summary>
+        private void ClearSelectedConnections()
+        {
+            if (_currentRoomNodeGraph.selectedConnections.Count == 0) return;
+            
+            _currentRoomNodeGraph.selectedConnections.Clear();
+            GUI.changed = true;
+        }
+        
+        /// <summary>
+        /// Deletes all currently selected connection lines
+        /// </summary>
+        private void DeleteSelectedConnections()
+        {
+            if (_currentRoomNodeGraph.selectedConnections.Count == 0) return;
+            
+            foreach (var (parentId, childId) in _currentRoomNodeGraph.selectedConnections)
+            {
+                RoomNodeSO parentNode = _currentRoomNodeGraph.GetRoomNode(parentId);
+                RoomNodeSO childNode = _currentRoomNodeGraph.GetRoomNode(childId);
+                
+                if (parentNode && childNode)
+                {
+                    // Check if we're removing a boss room connection
+                    if (childNode.roomNodeType.isBossRoom || parentNode.roomNodeType.isBossRoom)
+                    {
+                        _currentRoomNodeGraph.hasConnectedBossRoom = false;
+                    }
+                    
+                    parentNode.RemoveChildRoomNodeConnection(childId);
+                }
+            }
+            
+            ClearSelectedConnections();
+            AssetDatabase.SaveAssets();
+        }
+        
+        
         #endregion Room Connection Line
         
     }
