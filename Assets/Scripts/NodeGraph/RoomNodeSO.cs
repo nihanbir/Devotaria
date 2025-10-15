@@ -89,11 +89,6 @@ namespace NodeGraph
             {
                 // Display a label that can't be changed
                 EditorGUILayout.LabelField(roomNodeType.roomNodeTypeName);
-                
-                if (roomNodeType.isBossRoom)
-                {
-                    roomNodeGraph.hasConnectedBossRoom = true;
-                }
             }
 
             else
@@ -375,6 +370,11 @@ namespace NodeGraph
             // Add to both sides of the relationship
             bool childAdded = AddNodeIDToList(childRoomNodeIDList, childID);
             bool parentAdded = childNode.AddNodeIDToList(childNode.parentRoomNodeIDList, id);
+            
+            if (childNode.roomNodeType.isBossRoom)
+            {
+                roomNodeGraph.hasConnectedBossRoom = true;
+            }
 
             return childAdded && parentAdded;
         }
@@ -387,6 +387,10 @@ namespace NodeGraph
             RoomNodeSO childNode = roomNodeGraph.GetRoomNode(childID);
             if (!childNode) return false;
 
+            if (childNode.roomNodeType.isBossRoom)
+            {
+                roomNodeGraph.hasConnectedBossRoom = false;
+            }
             bool childRemoved = RemoveNodeIDFromList(childRoomNodeIDList, childID);
             bool parentRemoved = childNode.RemoveNodeIDFromList(childNode.parentRoomNodeIDList, id);
 

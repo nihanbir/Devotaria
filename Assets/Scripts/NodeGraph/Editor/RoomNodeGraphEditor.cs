@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameManager;
@@ -50,6 +51,9 @@ namespace NodeGraph.Editor
         private const float GridLarge = 100f;
         private const float GridSmall = 25f;
         
+        // Undo system
+        private static GraphUndoActionManager _undoActionManager;
+        
         #endregion Variables
         
         #region Graph Editor SO Asset
@@ -71,11 +75,18 @@ namespace NodeGraph.Editor
             
             OpenWindow();
             _currentRoomNodeGraph = roomNodeGraph;
+            
+            _undoActionManager = new GraphUndoActionManager
+            {
+                RoomNodeGraph = _currentRoomNodeGraph
+            };
+
             return true;
         }
-        
+
         private void OnEnable()
         {
+            
             //Subscribe to selection changed event
             Selection.selectionChanged += InspectorSelectionChanged;
             
@@ -105,6 +116,8 @@ namespace NodeGraph.Editor
             
             //Load the room node type list
             _roomNodeTypeList = GameResources.Instance.roomNodeTypeList;
+            
+            
         }
 
         private void OnDisable()
@@ -129,9 +142,11 @@ namespace NodeGraph.Editor
             //If a SO of type RoomNodeGraphSO has been selected, then process
             if (_currentRoomNodeGraph)
             {
+                // Draw undo info at the top
+                DrawUndoInfo();
+                
                 DrawBackgroundGrid(GridSmall, 0.2f, Color.gray);
                 DrawBackgroundGrid(GridLarge, 0.3f, Color.gray);
-                
                 
                 DrawDraggedLine();
                 
@@ -288,6 +303,7 @@ namespace NodeGraph.Editor
                         if (hoveredRoomNode)
                         { 
                             _currentRoomNodeGraph.roomNodeToDrawLineFrom.AddChildRoomNodeConnection(hoveredRoomNode.id);
+                            // _undoActionManager.RecordAddConnectionAction(_currentRoomNodeGraph.roomNodeToDrawLineFrom.id, hoveredRoomNode.id);
                         }
                         ClearLineDrag();
                     }
@@ -343,7 +359,13 @@ namespace NodeGraph.Editor
                 {
                     DeleteSelectedRoomNodes();
                 }
-                // currentEvent.Use();
+                currentEvent.Use();
+            }
+
+            if (currentEvent.keyCode == KeyCode.Z && currentEvent.control)
+            {
+                _undoActionManager.PerformUndo();
+                currentEvent.Use();
             }
         }
 
@@ -373,7 +395,7 @@ namespace NodeGraph.Editor
             // If there are no room nodes, add an entrance node first
             if (_currentRoomNodeGraph.roomNodeList.Count == 0)
             {
-                AddRoomNode(new Vector2(200f, 200f),_roomNodeTypeList.list.Find(x => x.isEntrance));
+                AddRoomNode(new Vector2(200f, 200f),_roomNodeTypeList.list.Find(x => x.isEntrance), recordUndo: false);
             }
             
             AddRoomNode(mousePositionObject,_roomNodeTypeList.list.Find(x => x.isNone));
@@ -382,7 +404,7 @@ namespace NodeGraph.Editor
         /// <summary>
         /// Add a new room node at the mouse position and with the specified room node type
         /// </summary>
-        private void AddRoomNode(object mousePositionObject, RoomNodeTypeSO roomNodeType)
+        private void AddRoomNode(object mousePositionObject, RoomNodeTypeSO roomNodeType, bool recordUndo = true)
         {
             Vector2 mousePosition = (Vector2) mousePositionObject;
             
@@ -397,6 +419,13 @@ namespace NodeGraph.Editor
             
             // Repopulate the dictionary
             _currentRoomNodeGraph.OnValidate();
+            
+            // Record undo action only if requested
+            if (recordUndo)
+            {
+                // Debug.Log(roomNode.roomNodeType);
+                _undoActionManager.RecordAddNodeAction(roomNode);
+            }
         }
 
         /// <summary>
@@ -432,6 +461,9 @@ namespace NodeGraph.Editor
         /// </summary>
         private void DeleteSelectedRoomNode(RoomNodeSO roomNode)
         {
+            // Record undo action BEFORE deletion
+            _undoActionManager.RecordDeleteNodeAction(roomNode);
+            
             // Check if we're removing a boss room connection
             if (roomNode.roomNodeType.isBossRoom)
             {
@@ -593,6 +625,8 @@ namespace NodeGraph.Editor
             Handles.DrawBezier(start, end, start, end, lineColor, null, lineWidth);
 
             GUI.changed = true;
+            
+            
         }
 
         /// <summary>
@@ -715,8 +749,11 @@ namespace NodeGraph.Editor
                 
                 if (parentNode && childNode)
                 {
-                    // Check if we're removing a boss room connection
-                    if (childNode.roomNodeType.isBossRoom || parentNode.roomNodeType.isBossRoom)
+                    // Record undo action BEFORE deletion
+                    _undoActionManager.RecordDeleteConnectionAction(parentId, childId);
+                    
+                    // Check if we're removing a boss room connection - child is check in RemoveChildRoomNodeConnection
+                    if (parentNode.roomNodeType.isBossRoom)
                     {
                         _currentRoomNodeGraph.hasConnectedBossRoom = false;
                     }
@@ -731,6 +768,20 @@ namespace NodeGraph.Editor
         
         
         #endregion Room Connection Line
+
+        #region Undo Region
         
+        /// <summary>
+        /// Draws undo information at the top of the editor window
+        /// </summary>
+        private void DrawUndoInfo()
+        {
+            GUILayout.BeginArea(new Rect(10, 10, 200, 30));
+            string undoText = $"Undo Available: {_undoActionManager.UndoStack.Count}/{_undoActionManager.MaxUndoActions} (Ctrl+Z)";
+            GUILayout.Label(undoText, EditorStyles.helpBox);
+            GUILayout.EndArea();
+        }
+        
+        #endregion
     }
 }

@@ -38,7 +38,7 @@ namespace NodeGraph
         /// </summary>
         public RoomNodeSO GetRoomNode(string roomNodeID)
         {
-            return RoomNodeDictionary.GetValueOrDefault(roomNodeID);
+            return string.IsNullOrEmpty(roomNodeID) ? null : RoomNodeDictionary.GetValueOrDefault(roomNodeID);
         }
         
         #region Editor Code
