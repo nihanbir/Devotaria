@@ -75,11 +75,14 @@ namespace NodeGraph.Editor
             
             OpenWindow();
             _currentRoomNodeGraph = roomNodeGraph;
-            
-            _undoActionManager = new GraphUndoActionManager
+
+            if (_undoActionManager == null)
             {
-                RoomNodeGraph = _currentRoomNodeGraph
-            };
+                _undoActionManager = new GraphUndoActionManager
+                {
+                    RoomNodeGraph = _currentRoomNodeGraph
+                };
+            }
 
             return true;
         }
@@ -303,7 +306,7 @@ namespace NodeGraph.Editor
                         if (hoveredRoomNode)
                         { 
                             _currentRoomNodeGraph.roomNodeToDrawLineFrom.AddChildRoomNodeConnection(hoveredRoomNode.id);
-                            // _undoActionManager.RecordAddConnectionAction(_currentRoomNodeGraph.roomNodeToDrawLineFrom.id, hoveredRoomNode.id);
+                            _undoActionManager.RecordAddConnectionAction(_currentRoomNodeGraph.roomNodeToDrawLineFrom.id, hoveredRoomNode.id);
                         }
                         ClearLineDrag();
                     }
@@ -581,7 +584,6 @@ namespace NodeGraph.Editor
                 foreach (var childID in roomNode.childRoomNodeIDList.Where(childID => _currentRoomNodeGraph.RoomNodeDictionary.ContainsKey(childID)))
                 {
                     DrawConnectionLine(roomNode, _currentRoomNodeGraph.RoomNodeDictionary[childID]);
-                    GUI.changed = true;
                 }
 
             }
@@ -625,8 +627,6 @@ namespace NodeGraph.Editor
             Handles.DrawBezier(start, end, start, end, lineColor, null, lineWidth);
 
             GUI.changed = true;
-            
-            
         }
 
         /// <summary>

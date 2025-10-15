@@ -45,15 +45,6 @@ namespace NodeGraph.Editor
                 parentConnections = new List<string>(node.parentRoomNodeIDList)
             };
             
-            foreach (var parentID in node.parentRoomNodeIDList)
-            {
-                RecordDeleteConnectionAction(parentID, node.id);
-            }
-            foreach (var childID in node.childRoomNodeIDList)
-            {
-                RecordDeleteConnectionAction(node.id, childID);
-            }
-
             PushUndoAction(action);
         }
         
@@ -105,17 +96,18 @@ namespace NodeGraph.Editor
         /// </summary>
         public void PushUndoAction(UndoAction action)
         {
-            // If stack is full, remove the oldest action
             if (UndoStack.Count >= MaxUndoActions)
             {
-                // Convert to list, remove first item, convert back
-                var list = new List<UndoAction>(UndoStack);
-                list.RemoveAt(list.Count - 1); // Remove the oldest (bottom of stack)
-                UndoStack = new Stack<UndoAction>(list);
-                // Reverse to maintain proper order
-                UndoStack = new Stack<UndoAction>(new List<UndoAction>(UndoStack));
+                // Convert to array, keep most recent items
+                var items = UndoStack.ToArray();
+                UndoStack.Clear();
+        
+                // Add back the most recent items (skip the oldest)
+                for (int i = MaxUndoActions - 2; i >= 0; i--)
+                {
+                    UndoStack.Push(items[i]);
+                }
             }
-            
             UndoStack.Push(action);
         }
         
@@ -125,6 +117,8 @@ namespace NodeGraph.Editor
         public void PerformUndo()
         {
             if (UndoStack.Count == 0) return;
+            
+            if (!RoomNodeGraph) return;
             
             UndoAction action = UndoStack.Pop();
             
@@ -187,12 +181,10 @@ namespace NodeGraph.Editor
             
             AssetDatabase.AddObjectToAsset(roomNode, RoomNodeGraph);
             
-            // Restore connections
-            foreach (string childId in action.childConnections)
-            {
-                roomNode.AddChildRoomNodeConnection(childId);
-            }
+            // Repopulate the dictionary before restoring connections
+            RoomNodeGraph.OnValidate();
             
+            // Restore connections
             foreach (string parentId in action.parentConnections)
             {
                 RoomNodeSO parentNode = RoomNodeGraph.GetRoomNode(parentId);
@@ -202,8 +194,11 @@ namespace NodeGraph.Editor
                 }
             }
             
-            // Repopulate the dictionary
-            RoomNodeGraph.OnValidate();
+            foreach (string childId in action.childConnections)
+            {
+                roomNode.AddChildRoomNodeConnection(childId);
+            }
+            
         }
         
         /// <summary>
